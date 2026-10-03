@@ -304,82 +304,91 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="px-6 border-b border-slate-800 bg-[#090712] flex items-center gap-2 overflow-x-auto py-2">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('game_analytics');
-              refreshGameData();
-            }}
-            id="tab-btn-game-analytics"
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'game_analytics'
-                ? 'bg-gradient-to-r from-[#ffd700] via-amber-400 to-[#d4af37] text-slate-950 font-black shadow-[0_0_20px_rgba(212,175,55,0.4)]'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent'
-            }`}
-          >
-            <Gamepad2 className="w-4 h-4" />
-            <span>🎮 لوحة نتائج اللعبة والدرجات اللحظية (Game Live Analytics)</span>
-          </button>
+        {/* Top Primary Navigation Tabs Bar */}
+        <nav
+          aria-label="تبويبات لوحة المشرف"
+          className="px-4 sm:px-6 pt-3 pb-3 bg-[#0a0816] border-b border-[#d4af37]/30"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {/* 1. لوحة النتائج */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('game_analytics');
+                refreshGameData();
+              }}
+              id="tab-scores"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'game_analytics'
+                  ? 'bg-gradient-to-r from-[#ffd700] via-amber-400 to-[#d4af37] text-slate-950 border-[#ffd700] shadow-[0_0_20px_rgba(212,175,55,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-[#d4af37]/40'
+              }`}
+            >
+              <Trophy className={`w-4 h-4 shrink-0 ${activeTab === 'game_analytics' ? 'text-slate-950' : 'text-amber-400'}`} />
+              <span className="truncate">لوحة النتائج</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('whatsapp')}
-            id="tab-btn-whatsapp"
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'whatsapp'
-                ? 'bg-gradient-to-r from-emerald-600/30 to-emerald-500/10 border border-emerald-500/60 text-emerald-300 shadow-[0_0_15px_rgba(37,211,102,0.2)]'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent'
-            }`}
-          >
-            <MessageCircle className="w-4 h-4 text-emerald-400" />
-            <span>إعدادات الواتساب</span>
-          </button>
+            {/* 2. إعدادات الواتساب */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('whatsapp')}
+              id="tab-whatsapp"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'whatsapp'
+                  ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-emerald-500/40'
+              }`}
+            >
+              <MessageCircle className={`w-4 h-4 shrink-0 ${activeTab === 'whatsapp' ? 'text-white' : 'text-emerald-400'}`} />
+              <span className="truncate">إعدادات الواتساب</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('users')}
-            id="tab-btn-users"
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'users'
-                ? 'bg-gradient-to-r from-amber-600/30 to-amber-500/10 border border-[#d4af37] text-amber-300 shadow-[0_0_15px_rgba(212,175,55,0.2)]'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent'
-            }`}
-          >
-            <Users className="w-4 h-4 text-[#ffd700]" />
-            <span>دليل الطلاب وحسابات الدخول ({users.length})</span>
-          </button>
+            {/* 3. دليل الطلاب وحسابات الدخول */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('users')}
+              id="tab-students"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'users'
+                  ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 text-slate-950 border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-amber-400/40'
+              }`}
+            >
+              <Users className={`w-4 h-4 shrink-0 ${activeTab === 'users' ? 'text-slate-950' : 'text-amber-300'}`} />
+              <span className="truncate">دليل الطلاب وحسابات الدخول</span>
+            </button>
 
+            {/* 4. باسوورد الأدمن والأمان */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('security')}
+              id="tab-security"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'security'
+                  ? 'bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-800 text-white border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-purple-500/40'
+              }`}
+            >
+              <KeyRound className={`w-4 h-4 shrink-0 ${activeTab === 'security' ? 'text-white' : 'text-purple-400'}`} />
+              <span className="truncate">باسوورد الأدمن والأمان</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('security')}
-            id="tab-btn-security"
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'security'
-                ? 'bg-gradient-to-r from-purple-600/30 to-purple-500/10 border border-purple-500/60 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent'
-            }`}
-          >
-            <KeyRound className="w-4 h-4 text-purple-400" />
-            <span>باسوورد الأدمن والأمان</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('overview')}
-            id="tab-btn-overview"
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'overview'
-                ? 'bg-gradient-to-r from-cyan-600/30 to-cyan-500/10 border border-cyan-500/60 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40 border border-transparent'
-            }`}
-          >
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <span>نظرة عامة وسجل العمليات</span>
-          </button>
-        </div>
+            {/* 5. نظرة عامة وسجل العمليات */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              id="tab-overview"
+              className={`col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'overview'
+                  ? 'bg-gradient-to-r from-cyan-500 via-cyan-600 to-blue-700 text-white border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-cyan-400/40'
+              }`}
+            >
+              <Activity className={`w-4 h-4 shrink-0 ${activeTab === 'overview' ? 'text-white' : 'text-cyan-400'}`} />
+              <span className="truncate">نظرة عامة وسجل العمليات</span>
+            </button>
+          </div>
+        </nav>
 
         {/* Tab Content Area */}
         <div className="p-6 sm:p-8">

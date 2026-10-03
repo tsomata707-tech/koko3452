@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { RobotBackground } from './components/RobotBackground';
+import { SplashScreen } from './components/SplashScreen';
 import { LoginCard } from './components/LoginCard';
 import { PortalHome } from './components/PortalHome';
 import { AdminPanel } from './components/AdminPanel';
@@ -9,6 +10,7 @@ import { KeyRound } from 'lucide-react';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [authScreen, setAuthScreen] = useState<'splash' | 'login'>('splash');
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
 
@@ -18,6 +20,7 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setAuthScreen('splash');
   };
 
   const handleAdminAuthenticated = () => {
@@ -46,7 +49,7 @@ export default function App() {
         onExitAdmin={handleExitAdmin}
       />
 
-      {/* Cybernetic Robot Background Visual (Soft Light Gray, Zero Letters) */}
+      {/* Cybernetic Background Visual */}
       <RobotBackground />
 
       {/* Main Page Area */}
@@ -55,25 +58,29 @@ export default function App() {
           /* Admin Management Panel */
           <AdminPanel onExitAdmin={handleExitAdmin} onLoginAsStudent={handleLoginAsStudent} />
         ) : currentUser ? (
-
-          /* 2. All Site Modules Display Immediately After Login: 
-             - لوحة الشرف
-             - الأربع جروبات (التفاعلي، الفوري، المرجئ)
-             - المستويات التعليمية (الوحدات الـ 10)
-          */
+          /* All Educational Environment Modules & Storyboard Screens */
           <PortalHome username={currentUser} onLogout={handleLogout} />
+        ) : authScreen === 'splash' ? (
+          /* Screen 1: Splash Screen (شاشة الدخول التمهيدية) */
+          <div className="flex flex-col items-center justify-center min-h-[78vh] py-4">
+            <SplashScreen
+              onEnter={() => setAuthScreen('login')}
+              onOpenAdminLogin={() => setIsAdminModalOpen(true)}
+            />
+          </div>
         ) : (
-          /* 1. Strictly the First Page is Login */
-          <div className="flex flex-col items-center justify-center min-h-[78vh] py-6">
+          /* Screen 2: Login Screen (شاشة تسجيل الدخول النموذجية) */
+          <div className="flex flex-col items-center justify-center min-h-[78vh] py-4">
             <LoginCard
               onLoginSuccess={handleLoginSuccess}
               onOpenAdminLogin={() => setIsAdminModalOpen(true)}
+              onBackToSplash={() => setAuthScreen('splash')}
             />
           </div>
         )}
       </main>
 
-      {/* Admin Authentication Modal (Separate Dedicated Password) */}
+      {/* Admin Authentication Modal (Dedicated Secure Password) */}
       <AdminLoginModal
         isOpen={isAdminModalOpen}
         onClose={() => setIsAdminModalOpen(false)}
@@ -84,7 +91,7 @@ export default function App() {
       <footer className="relative z-10 py-4 text-center text-[11px] text-slate-500 border-t border-slate-900/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span>منظومة Cp التعليمية &copy; {new Date().getFullYear()} - جميع الحقوق محفوظة</span>
+            <span>منظومة رحلة مصمم الوسائط المتعددة &copy; {new Date().getFullYear()} - جميع الحقوق محفوظة</span>
           </div>
 
           <div className="flex items-center gap-4">

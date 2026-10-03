@@ -1,6 +1,6 @@
 {
-  "name": "منصة Cp التعليمية",
-  "description": "بيئة ألعاب تعليمية إلكترونية لإنتاج وتصميم الوسائط المتعددة ببرنامج Adobe Captivate 2019 مع التغذية الراجعة التفاعلية",
+  "name": "رحلة مصمم الوسائط المتعددة",
+  "description": "بيئة ألعاب تعليمية تفاعلية قائمة على التنافس والتعاون وأنماط التغذية الراجعة لإتقان Adobe Captivate 2019 لرسالة الماجستير",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

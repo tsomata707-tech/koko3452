@@ -7,6 +7,11 @@ import { ModuleDetailsView } from './ModuleDetailsView';
 import { HonorBoard } from './HonorBoard';
 import { ResearchGroups } from './ResearchGroups';
 import { EducationalGameView } from './EducationalGameView';
+import { WelcomeScreen } from './WelcomeScreen';
+import { InstructionsScreen } from './InstructionsScreen';
+import { ProfileScreen } from './ProfileScreen';
+import { LearningMapScreen } from './LearningMapScreen';
+import { LeaderboardOrTeamBoard } from './LeaderboardOrTeamBoard';
 import { getGroupByUsername } from '../data/studentAccounts';
 import { getStudentProgress } from '../utils/gameStorage';
 import {
@@ -20,6 +25,10 @@ import {
   Zap,
   Shield,
   Gamepad2,
+  Compass,
+  User,
+  HelpCircle,
+  Award,
 } from 'lucide-react';
 
 interface PortalHomeProps {
@@ -27,12 +36,24 @@ interface PortalHomeProps {
   onLogout: () => void;
 }
 
-export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) => {
-  // Main Section Navigation (اللعبة التعليمية -> لوحة الشرف -> الأربع جروبات -> المستويات التعليمية)
-  const [activeMainSection, setActiveMainSection] = useState<'game' | 'honor' | 'groups' | 'levels'>('game');
+export type PortalSection =
+  | 'map'
+  | 'welcome'
+  | 'instructions'
+  | 'profile'
+  | 'game'
+  | 'ranking'
+  | 'honor'
+  | 'groups'
+  | 'levels';
 
-  // Detect user's research group based on username (G1xx, G2xx, G3xx, G4xx)
+export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) => {
+  // Main Section Navigation - defaults to 'welcome' on first login for smooth onboarding, or 'map'
+  const [activeMainSection, setActiveMainSection] = useState<PortalSection>('welcome');
+
+  // Detect user's research group based on username (G1_Cp_01 -> G1)
   const userGroupMeta = getGroupByUsername(username);
+  const isCollaborative = userGroupMeta?.learningMode === 'تعاوني';
 
   // Student Game Progress
   const studentGame = getStudentProgress(username);
@@ -91,19 +112,19 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
   return (
     <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-6 space-y-6" id="portal-dashboard">
       {/* Top Banner Overview Card */}
-      <div className="rounded-3xl bg-[#0b0914]/95 backdrop-blur-2xl border-2 border-[#d4af37] shadow-[0_0_35px_rgba(212,175,55,0.2)] p-6 sm:p-8 text-right overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-[#d4af37]/25">
+      <div className="rounded-3xl bg-[#0b0f1e]/95 backdrop-blur-2xl border-2 border-blue-500/40 shadow-[0_0_35px_rgba(37,99,235,0.2)] p-6 sm:p-8 text-right overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-slate-800">
           {/* Right Header & Greeting */}
           <div className="flex items-center gap-4">
             <CpLogo size="lg" showText={false} />
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-bold font-['Cairo']">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs font-bold font-['Cairo']">
                   جلسة تعليمية نشطة
                 </span>
                 {userGroupMeta ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-950/70 border border-[#d4af37] text-[#ffd700] text-xs font-bold font-['Cairo']">
-                    {userGroupMeta.code}: {userGroupMeta.learningMode} + {userGroupMeta.feedbackMode}
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-950/80 border border-blue-400/50 text-blue-300 text-xs font-bold font-['Cairo']">
+                    {userGroupMeta.code}: نمط {userGroupMeta.learningMode} + تغذية {userGroupMeta.feedbackMode}
                   </span>
                 ) : (
                   <span className="text-xs text-[#ffd700] font-semibold font-['Cairo']">
@@ -112,9 +133,9 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
                 )}
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] mt-1">
-                مرحباً بك، <span className="text-[#ffd700] font-mono">{username}</span> في المنصة التعليمية
+                رحلة مصمم الوسائط المتعددة: مرحباً بك، <span className="text-[#ffd700] font-mono">{username}</span>
               </h1>
-              <p className="text-xs text-slate-300 mt-1 font-['IBM_Plex_Sans_Arabic']">
+              <p className="text-xs text-slate-300 mt-1 font-['Cairo']">
                 {userGroupMeta ? userGroupMeta.name : RESEARCH_INFO.title}
               </p>
             </div>
@@ -122,105 +143,231 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
 
           {/* Quick Metrics Cards */}
           <div className="flex items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
-            <div className="px-4 py-2.5 rounded-2xl bg-[#141026] border border-[#d4af37]/40 text-right">
-              <span className="text-[10px] text-slate-400 block font-['Cairo']">إجمالي الإنجاز</span>
-              <span className="text-lg font-black text-amber-300 font-['Outfit']">{overallPercentage}%</span>
-            </div>
-
-            <div className="px-4 py-2.5 rounded-2xl bg-[#141026] border border-purple-500/40 text-right">
-              <span className="text-[10px] text-slate-400 block font-['Cairo']">المهام المتقنة</span>
-              <span className="text-lg font-black text-purple-300 font-['Outfit']">
-                {totalCompletedCount}/{totalObjectivesCount}
+            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-blue-500/30 text-right">
+              <span className="text-[10px] text-slate-400 block font-['Cairo']">رصيد النقاط</span>
+              <span className="text-lg font-black text-amber-300 font-['Outfit']">
+                {studentGame.totalScore} ⭐
               </span>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-[#141026] border border-cyan-500/40 text-right">
-              <span className="text-[10px] text-slate-400 block font-['Cairo']">المستويات التعليمية</span>
-              <span className="text-lg font-black text-cyan-300 font-['Outfit']">10 مستويات</span>
+            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-purple-500/30 text-right">
+              <span className="text-[10px] text-slate-400 block font-['Cairo']">المرحلة الحالية</span>
+              <span className="text-lg font-black text-purple-300 font-['Outfit']">
+                L{studentGame.currentLevel} / 10
+              </span>
+            </div>
+
+            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-emerald-500/30 text-right">
+              <span className="text-[10px] text-slate-400 block font-['Cairo']">الأوسمة المكتسبة</span>
+              <span className="text-lg font-black text-emerald-300 font-['Outfit']">
+                {studentGame.badges.length} 🏅
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Master Navigation Bar: 1. اللعبة التعليمية - 2. لوحة الشرف - 3. الأربع جروبات - 4. المستويات التعليمية */}
-        <div className="pt-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-950 border border-[#d4af37]/50 shadow-inner w-full sm:w-auto overflow-x-auto">
-            {/* 1. اللعبة التعليمية التفاعلية */}
+        {/* Master Storyboard Navigation Bar: All 9 key sections accessible in 1 click */}
+        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#070a16] border border-blue-500/30 shadow-inner w-full overflow-x-auto">
+            {/* 1. خريطة التعلم */}
+            <button
+              type="button"
+              id="tab-learning-map"
+              onClick={() => setActiveMainSection('map')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'map'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+              <span>🗺️ خريطة التعلم (10 مراحل)</span>
+            </button>
+
+            {/* 2. اللعبة والنشاط */}
             <button
               type="button"
               id="tab-educational-game"
               onClick={() => setActiveMainSection('game')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 activeMainSection === 'game'
-                  ? 'bg-gradient-to-r from-[#ffd700] via-amber-400 to-[#d4af37] text-slate-950 shadow-[0_0_20px_rgba(212,175,55,0.4)]'
+                  ? 'bg-gradient-to-r from-[#ffd700] via-amber-400 to-[#d4af37] text-slate-950 shadow-[0_0_15px_rgba(212,175,55,0.4)]'
                   : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
               <Gamepad2 className="w-4 h-4" />
-              <span>🎮 اللعبة التعليمية (10 مستويات + أفاتار)</span>
+              <span>🎮 النشاط والتقييم اللحظي</span>
             </button>
 
-            {/* 2. لوحة الشرف */}
+            {/* 3. لوحة المتصدرين أو إنجاز الفريق */}
+            <button
+              type="button"
+              id="tab-ranking-or-team"
+              onClick={() => setActiveMainSection('ranking')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'ranking'
+                  ? isCollaborative
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                    : 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              {isCollaborative ? (
+                <>
+                  <Users className="w-4 h-4" />
+                  <span>👥 إنجاز الفريق المشترك</span>
+                </>
+              ) : (
+                <>
+                  <Trophy className="w-4 h-4" />
+                  <span>🥇 لوحة المتصدرين التنافسية</span>
+                </>
+              )}
+            </button>
+
+            {/* 4. الملف الشخصي */}
+            <button
+              type="button"
+              id="tab-profile"
+              onClick={() => setActiveMainSection('profile')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'profile'
+                  ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-[0_0_15px_rgba(20,184,166,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>👤 الملف الشخصي</span>
+            </button>
+
+            {/* 5. قواعد الرحلة والتعليمات */}
+            <button
+              type="button"
+              id="tab-instructions"
+              onClick={() => setActiveMainSection('instructions')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'instructions'
+                  ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-[0_0_15px_rgba(2,132,199,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>📋 قواعد الرحلة</span>
+            </button>
+
+            {/* 6. شاشة الترحيب */}
+            <button
+              type="button"
+              id="tab-welcome"
+              onClick={() => setActiveMainSection('welcome')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'welcome'
+                  ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <span>👋 بطاقة الترحيب</span>
+            </button>
+
+            {/* 7. لوحة الشرف */}
             <button
               type="button"
               id="tab-honor-board"
               onClick={() => setActiveMainSection('honor')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 activeMainSection === 'honor'
-                  ? 'bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-slate-950 shadow-[0_0_15px_rgba(212,175,55,0.35)]'
+                  ? 'bg-gradient-to-r from-amber-400 to-[#d4af37] text-slate-950 shadow-[0_0_15px_rgba(212,175,55,0.4)]'
                   : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
-              <Trophy className="w-4 h-4" />
+              <Award className="w-4 h-4" />
               <span>لوحة الشرف</span>
             </button>
 
-            {/* 3. الأربع جروبات */}
+            {/* 8. الأربع مجموعات */}
             <button
               type="button"
               id="tab-research-groups"
               onClick={() => setActiveMainSection('groups')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 activeMainSection === 'groups'
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.35)]'
+                  ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
                   : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
-              <Users className="w-4 h-4" />
-              <span>الأربع جروبات (مجموعتك المصرح بها)</span>
+              <Shield className="w-4 h-4" />
+              <span>المجموعات الـ 4</span>
             </button>
 
-            {/* 4. المستويات التعليمية */}
+            {/* 9. محتوى ومحاكي Captivate */}
             <button
               type="button"
               id="tab-educational-levels"
               onClick={() => setActiveMainSection('levels')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 activeMainSection === 'levels'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.35)]'
+                  ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(8,145,178,0.4)]'
                   : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>المستويات التعليمية والدليل</span>
+              <span>المحتوى والمحاكي العملي</span>
             </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-['Cairo']">
-            <GraduationCap className="w-4 h-4 text-[#ffd700]" />
-            <span>{RESEARCH_INFO.university}</span>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area based on Selected Master Tab */}
+      {/* Main Content Render based on Selected Master Tab */}
+      {/* 1. خريطة التعلم التفاعلية (Screen 6 & Screen 7 Stage Intro) */}
+      {activeMainSection === 'map' && (
+        <LearningMapScreen
+          username={username}
+          onSelectStageForContent={() => setActiveMainSection('levels')}
+          onSelectStageForActivity={() => setActiveMainSection('game')}
+        />
+      )}
+
+      {/* 2. شاشة الترحيب (Screen 3) */}
+      {activeMainSection === 'welcome' && (
+        <WelcomeScreen
+          username={username}
+          onStartLearning={() => setActiveMainSection('map')}
+          onOpenInstructions={() => setActiveMainSection('instructions')}
+        />
+      )}
+
+      {/* 3. شاشة التعليمات وقواعد الرحلة (Screen 4) */}
+      {activeMainSection === 'instructions' && (
+        <InstructionsScreen
+          onGotIt={() => setActiveMainSection('map')}
+          onBackToWelcome={() => setActiveMainSection('welcome')}
+        />
+      )}
+
+      {/* 4. الملف الشخصي (Screen 5) */}
+      {activeMainSection === 'profile' && (
+        <ProfileScreen
+          username={username}
+          onNavigateToMap={() => setActiveMainSection('map')}
+        />
+      )}
+
+      {/* 5. اللعبة التعليمية والنشاط والتغذية الراجعة المتمايزة (Screens 8, 9, 10) */}
       {activeMainSection === 'game' && (
         <EducationalGameView username={username} />
       )}
 
+      {/* 6. لوحة المتصدرين الفردية (التنافسي) / لوحة إنجاز الفريق المشترك (التعاوني) (Screen 10 & 11) */}
+      {activeMainSection === 'ranking' && (
+        <LeaderboardOrTeamBoard currentUsername={username} />
+      )}
+
+      {/* 7. لوحة الشرف العامة */}
       {activeMainSection === 'honor' && (
         <HonorBoard currentUsername={username} />
       )}
 
+      {/* 8. المجموعات البحثية الأربعة */}
       {activeMainSection === 'groups' && (
         <ResearchGroups
           selectedGroupId={selectedGroupId}
@@ -229,9 +376,9 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
         />
       )}
 
+      {/* 9. المحتوى التعليمي الكامل ومحاكي Adobe Captivate 2019 التفاعلي */}
       {activeMainSection === 'levels' && (
         <div className="flex flex-col lg:flex-row items-start gap-6">
-          {/* Right Sidebar: 10 Main Headings with Icons */}
           <RightSidebarModules
             modules={CURRICULUM_MODULES}
             activeModuleId={activeModuleId}
@@ -239,7 +386,6 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
             completedObjectivesCount={completedCountByModule}
           />
 
-          {/* Center Details View: Behavioral Objectives + Practical Simulator */}
           <ModuleDetailsView
             module={currentModule}
             isFirst={activeModuleIndex === 0}
@@ -261,7 +407,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
       )}
 
       {/* Bottom Footer Utilities */}
-      <div className="mt-8 pt-6 border-t border-[#d4af37]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="mt-8 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <WhatsAppSupport />
 
         <button
@@ -271,7 +417,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-red-500/40 bg-red-950/30 hover:bg-red-900/40 text-red-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
-          <span>تسجيل الخروج والعودة لصفحة الدخول</span>
+          <span>تسجيل الخروج والعودة لصفحة البداية</span>
         </button>
       </div>
     </div>
