@@ -127,7 +127,7 @@ export interface VideoSlotDef {
 export interface EducationalVideo {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   targetSlotId: string; // e.g. 'level-1', 'level-2', ..., 'level-10', 'app-task'
   targetSlotName: string;
   videoUrl: string; // YouTube, MP4 or file
@@ -136,6 +136,16 @@ export interface EducationalVideo {
   addedAt: string;
   updatedAt?: string;
   isActive: boolean;
+  blobId?: string;
+}
+
+export interface ResearcherInfo {
+  name: string;
+  title: string;
+  role: string;
+  imageUrl: string;
+  degree?: string;
+  accentColor?: string;
 }
 
 export interface SupervisorCard {
@@ -154,6 +164,7 @@ export interface SupervisorsHonorBoardConfig {
   boardSubtitle: string;
   university: string;
   researcher?: string;
+  researcherInfo?: ResearcherInfo;
   researchTitle?: string;
   showOnStudentLogin?: boolean;
   supervisors: SupervisorCard[];

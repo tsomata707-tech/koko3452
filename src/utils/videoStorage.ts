@@ -1,4 +1,5 @@
 import { EducationalVideo, VideoSlotDef } from '../types';
+import { storeVideoBlob, getVideoBlobUrl, deleteVideoBlob } from './indexedDbVideo';
 
 export const VIDEO_SLOTS: VideoSlotDef[] = [
   {
@@ -85,17 +86,17 @@ export const VIDEO_SLOTS: VideoSlotDef[] = [
   },
 ];
 
-const VIDEOS_STORAGE_KEY = 'cp_educational_videos_v1';
+const VIDEOS_STORAGE_KEY = 'cp_educational_videos_v2';
+const PREV_VIDEOS_STORAGE_KEY = 'cp_educational_videos_v1';
 
-// Initial educational videos seeding
+// Initial educational videos seeding (Only title, slot, and url - NO description!)
 const INITIAL_VIDEOS: EducationalVideo[] = [
   {
     id: 'vid-1',
     title: 'مقدمة في إنتاج وتصميم الوسائط المتعددة',
-    description: 'شرح مفصل لمفهوم الوسائط المتعددة، مكوناتها الرقمية، ودورها في تعزيز التقبل التكنولوجي وتصميم المحتوى التفاعلي.',
     targetSlotId: 'level-1',
     targetSlotName: 'المرحلة 1: مفهوم الوسائط المتعددة والتعليم الإلكتروني',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Standard embed
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     videoType: 'youtube',
     duration: '04:30',
     addedAt: '2026-03-01 10:00',
@@ -104,7 +105,6 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
   {
     id: 'vid-2',
     title: 'جولة استكشافية في واجهة Adobe Captivate 2019',
-    description: 'استعراض أشرطة الأدوات العلوية، نافذة الشرائح Filmstrip، لوحة الخصائص Properties، ومكتبة العناصر Library.',
     targetSlotId: 'level-2',
     targetSlotName: 'المرحلة 2: التعرف على واجهة Adobe Captivate 2019',
     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -116,7 +116,6 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
   {
     id: 'vid-3',
     title: 'إدارة وتخطيط الشرائح والمشاهد في كابتيفيت',
-    description: 'كيفية إنشاء شريحة فارغة، ضبط التوقيت، استخدام الماستر سلايد، وتنظيم تسلسل المحتوى التعليمي.',
     targetSlotId: 'level-3',
     targetSlotName: 'المرحلة 3: إدارة وتصميم الشرائح والمشاهد التفاعلية',
     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -128,7 +127,6 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
   {
     id: 'vid-8',
     title: 'تقنيات الفيديو التفاعلي في Adobe Captivate',
-    description: 'شرح إدراج مقاطع الفيديو، إنشاء نقاط المعاينة Bookmarks، وتركيب أسئلة التحقق المعرفي على الفيديو.',
     targetSlotId: 'level-8',
     targetSlotName: 'المرحلة 8: إدراج ومعالجة الفيديو التفاعلي والمحاكاة',
     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -140,7 +138,6 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
   {
     id: 'vid-task',
     title: 'دليل تنفيذ المهمة التطبيقية العملية',
-    description: 'خطوات إنجاز السيناريو العملي خطوة بخطوة في برنامج Captivate وتجهيز ملف المشروع للتسليم.',
     targetSlotId: 'app-task',
     targetSlotName: 'شاشة المهمة التطبيقية (Practical Application Task)',
     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
@@ -154,11 +151,23 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
 export function getEducationalVideos(): EducationalVideo[] {
   try {
     const raw = localStorage.getItem(VIDEOS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(INITIAL_VIDEOS));
-      return INITIAL_VIDEOS;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
     }
-    return JSON.parse(raw);
+
+    // Try migration from v1
+    const prevRaw = localStorage.getItem(PREV_VIDEOS_STORAGE_KEY);
+    if (prevRaw) {
+      const prevParsed = JSON.parse(prevRaw);
+      if (Array.isArray(prevParsed)) {
+        localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(prevParsed));
+        return prevParsed;
+      }
+    }
+
+    localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(INITIAL_VIDEOS));
+    return INITIAL_VIDEOS;
   } catch {
     return INITIAL_VIDEOS;
   }
@@ -166,11 +175,40 @@ export function getEducationalVideos(): EducationalVideo[] {
 
 export function saveEducationalVideos(videos: EducationalVideo[]): void {
   localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(videos));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('videos-storage-updated', { detail: videos }));
+  }
 }
 
 export function getVideoBySlot(slotId: string): EducationalVideo | undefined {
   const all = getEducationalVideos();
   return all.find((v) => v.targetSlotId === slotId && v.isActive);
+}
+
+/**
+ * Ensures video URL is valid, rehydrating local IndexedDB blob URLs if needed
+ */
+export async function rehydrateLocalVideoUrls(): Promise<EducationalVideo[]> {
+  const all = getEducationalVideos();
+  let changed = false;
+
+  const resolved = await Promise.all(
+    all.map(async (v) => {
+      if (v.videoType === 'file' && v.blobId) {
+        const freshUrl = await getVideoBlobUrl(v.blobId);
+        if (freshUrl && freshUrl !== v.videoUrl) {
+          changed = true;
+          return { ...v, videoUrl: freshUrl };
+        }
+      }
+      return v;
+    })
+  );
+
+  if (changed) {
+    saveEducationalVideos(resolved);
+  }
+  return resolved;
 }
 
 export function addEducationalVideo(
@@ -185,9 +223,10 @@ export function addEducationalVideo(
     targetSlotName: slotDef ? slotDef.name : videoData.targetSlotId,
     videoUrl: normalizeVideoUrl(videoData.videoUrl),
     addedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    isActive: true,
   };
 
-  // Replace any existing video in the same slot or add to list
+  // Replace any existing video in the same slot or prepend to list
   const filtered = all.filter((v) => v.targetSlotId !== videoData.targetSlotId);
   filtered.unshift(newVideo);
   saveEducationalVideos(filtered);
@@ -223,6 +262,11 @@ export function updateEducationalVideo(
 
 export function deleteEducationalVideo(id: string): boolean {
   const all = getEducationalVideos();
+  const toDelete = all.find((v) => v.id === id);
+  if (toDelete && toDelete.blobId) {
+    deleteVideoBlob(toDelete.blobId).catch(() => {});
+  }
+
   const filtered = all.filter((v) => v.id !== id);
   if (filtered.length !== all.length) {
     saveEducationalVideos(filtered);
@@ -238,8 +282,10 @@ export function normalizeVideoUrl(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
 
-  // YouTube watch URL: https://www.youtube.com/watch?v=XXXX
-  const watchMatch = trimmed.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  // YouTube watch URL: https://www.youtube.com/watch?v=XXXX or shorts or embed or youtu.be
+  const watchMatch = trimmed.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  );
   if (watchMatch && watchMatch[1]) {
     return `https://www.youtube.com/embed/${watchMatch[1]}?rel=0&modestbranding=1`;
   }

@@ -271,9 +271,11 @@ export const ModuleDetailsView: React.FC<ModuleDetailsViewProps> = ({
                   <video src={moduleVideo.videoUrl} controls className="w-full h-full object-contain" />
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                {moduleVideo.description}
-              </p>
+              {moduleVideo.description && (
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  {moduleVideo.description}
+                </p>
+              )}
             </div>
           ) : (
             <div className="text-center py-12 text-slate-400 space-y-3 bg-slate-950/40 rounded-2xl border border-dashed border-slate-800">

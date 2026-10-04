@@ -15,16 +15,15 @@ import {
   GraduationCap,
   ArrowUp,
   ArrowDown,
-  ExternalLink,
-  Layers,
-  HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 import {
   getSupervisorsBoardConfig,
   saveSupervisorsBoardConfig,
   resetSupervisorsBoardConfig,
+  INITIAL_RESEARCHER_INFO,
 } from '../utils/supervisorsStorage';
-import { SupervisorsHonorBoardConfig, SupervisorCard } from '../types';
+import { SupervisorsHonorBoardConfig, SupervisorCard, ResearcherInfo } from '../types';
 import { addActivityLog } from '../utils/adminStorage';
 import { SupervisorsHonorBoard } from './SupervisorsHonorBoard';
 
@@ -34,7 +33,39 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // File Upload Helper to convert JPG/PNG to Base64 easily
+  // File Upload Helper for Hikmat (Researcher)
+  const handleResearcherPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/i)) {
+      setErrorMessage('يرجى اختيار صورة بصيغة JPG أو JPEG أو PNG صالحة.');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage('حجم الصورة كبير، يرجى اختيار صورة أقل من 2 ميجابايت.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Data = e.target?.result as string;
+      if (base64Data) {
+        setConfig((prev) => ({
+          ...prev,
+          researcherInfo: {
+            ...(prev.researcherInfo || INITIAL_RESEARCHER_INFO),
+            imageUrl: base64Data,
+          },
+        }));
+        setSuccessMessage('تم تعيين صورة الباحثة (حكمت) بنجاح! لا تنسَ الضغط على "حفظ التعديلات".');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // File Upload Helper for Supervisors
   const handlePhotoUpload = (cardId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -61,19 +92,22 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
             card.id === cardId ? { ...card, imageUrl: base64Data } : card
           ),
         }));
-        setSuccessMessage('تم تحميل وتعيين صورة المشرف بنجاح! لا تنسَ الضغط على "حفظ التعديلات".');
+        setSuccessMessage('تم تعيين صورة المشرف بنجاح! لا تنسَ الضغط على "حفظ التعديلات".');
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // Add new small card
+  const arabicOrdinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'];
+
+  // Add new supervisor card with automatic alignment & ordinal naming
   const handleAddCard = () => {
     const nextIdx = config.supervisors.length + 1;
+    const ordinal = arabicOrdinals[nextIdx - 1] || `${nextIdx}`;
     const newCard: SupervisorCard = {
       id: `sup_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       cardIndex: nextIdx,
-      cardLabel: `البطاقة ${nextIdx}`,
+      cardLabel: `المشرف ${ordinal}`,
       name: 'د/ اسم المشرف الجديد',
       title: 'كلية التربية النوعية - جامعة طنطا',
       role: 'مشرف علمي على البحث',
@@ -81,80 +115,71 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
       accentColor: '#ffd700',
     };
 
-    setConfig((prev) => ({
-      ...prev,
-      supervisors: [...prev.supervisors, newCard],
-    }));
-    setSuccessMessage(`تمت إضافة بطاقة جديدة (${newCard.cardLabel}) داخل لوحة الشرف.`);
+    setConfig((prev) => {
+      const updated = [...prev.supervisors, newCard].map((c, i) => ({
+        ...c,
+        cardIndex: i + 1,
+        cardLabel: c.cardLabel?.startsWith('المشرف') ? `المشرف ${arabicOrdinals[i] || i + 1}` : c.cardLabel,
+      }));
+      return { ...prev, supervisors: updated };
+    });
+    setSuccessMessage(`تمت إضافة بطاقة جديدة (${newCard.cardLabel}) وتمت إعادة محاذاة وتوسيط اللوحة تلقائياً.`);
   };
 
-  // Delete small card
+  // Delete supervisor card with automatic re-alignment & ordinal re-indexing
   const handleDeleteCard = (cardId: string, cardLabel: string) => {
-    if (config.supervisors.length <= 1) {
-      setErrorMessage('يجب أن تحتوي لوحة الشرف على بطاقة واحدة على الأقل.');
+    if (supervisorsToManage.length <= 1) {
+      setErrorMessage('يجب أن تحتوي لوحة الشرف على مشرف واحد على الأقل.');
       return;
     }
 
     if (window.confirm(`هل أنت متأكد من حذف ${cardLabel} من لوحة الشرف؟`)) {
       setConfig((prev) => {
         const remaining = prev.supervisors.filter((c) => c.id !== cardId);
-        // re-index remaining cards
-        const reIndexed = remaining.map((c, i) => ({
+        // Automatically re-index and re-align card labels and indices
+        const realigned = remaining.map((c, i) => ({
           ...c,
           cardIndex: i + 1,
-          cardLabel: c.cardLabel.startsWith('البطاقة') ? `البطاقة ${i + 1}` : c.cardLabel,
+          cardLabel: c.cardLabel?.startsWith('المشرف') ? `المشرف ${arabicOrdinals[i] || i + 1}` : c.cardLabel,
         }));
         return {
           ...prev,
-          supervisors: reIndexed,
+          supervisors: realigned,
         };
       });
-      setSuccessMessage(`تم حذف ${cardLabel} بنجاح.`);
+      setSuccessMessage(`تم حذف ${cardLabel} بنجاح، وتمت إعادة محاذاة وتوسيط البطاقات تلقائياً لتظهر بمظهر لائق ومتناسق.`);
     }
   };
 
-  // Move card up/down
+  // Move supervisor card
   const handleMoveCard = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= config.supervisors.length) return;
+    const newSupervisors = [...config.supervisors];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
 
-    setConfig((prev) => {
-      const copy = [...prev.supervisors];
-      const temp = copy[index];
-      copy[index] = copy[targetIndex];
-      copy[targetIndex] = temp;
+    if (targetIdx < 0 || targetIdx >= newSupervisors.length) return;
 
-      // Update cardIndex and default labels
-      const updated = copy.map((c, i) => ({
-        ...c,
-        cardIndex: i + 1,
-        cardLabel: c.cardLabel.startsWith('البطاقة') ? `البطاقة ${i + 1}` : c.cardLabel,
-      }));
+    const temp = newSupervisors[index];
+    newSupervisors[index] = newSupervisors[targetIdx];
+    newSupervisors[targetIdx] = temp;
 
-      return {
-        ...prev,
-        supervisors: updated,
-      };
-    });
-  };
-
-  // Update card fields
-  const handleUpdateCardField = (cardId: string, field: keyof SupervisorCard, value: any) => {
     setConfig((prev) => ({
       ...prev,
-      supervisors: prev.supervisors.map((c) => (c.id === cardId ? { ...c, [field]: value } : c)),
+      supervisors: newSupervisors.map((c, i) => ({
+        ...c,
+        cardIndex: i + 1,
+      })),
     }));
   };
 
-  // Save changes
+  // Save all
   const handleSaveAll = () => {
     try {
       saveSupervisorsBoardConfig(config);
-      addActivityLog('تم تحديث وتعديل بيانات لوحة الشرف للمشرفين', 'المشرف', 'success');
-      setSuccessMessage('تم حفظ كافة إعدادات لوحة الشرف والبطاقات بنجاح!');
+      addActivityLog('تم تحديث وتعديل بيانات لوحة الشرف للمشرفين والباحثة', 'المشرف', 'success');
+      setSuccessMessage('تم حفظ كافة إعدادات لوحة الشرف وبطاقات المشرفين بنجاح!');
       setErrorMessage(null);
       setTimeout(() => setSuccessMessage(null), 4000);
-    } catch (err) {
+    } catch {
       setErrorMessage('حدث خطأ أثناء حفظ الإعدادات، يرجى المحاولة ثانية.');
     }
   };
@@ -169,6 +194,12 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
       setTimeout(() => setSuccessMessage(null), 4000);
     }
   };
+
+  const researcher = config.researcherInfo || INITIAL_RESEARCHER_INFO;
+  // Supervisors to manage (excluding any legacy Hikmat entry if present)
+  const supervisorsToManage = config.supervisors.filter(
+    (s) => !s.name?.includes('حكمت') && s.id !== 'sup-4'
+  );
 
   return (
     <div className="space-y-6 text-right font-['Cairo',_sans-serif]" id="admin-supervisors-honor-manager">
@@ -188,14 +219,14 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
                 </span>
                 <span className="text-xs text-amber-200 flex items-center gap-1 font-bold">
                   <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
-                  <span>البطاقة الكبيرة الزجاجية + البطاقات الصغيرة (البطاقة 1، البطاقة 2...)</span>
+                  <span>اسم وصورة حكمت في الأعلى + المشرفون الثلاثة في الصف السفلي</span>
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white mt-1 font-['Tajawal']">
-                لوحة الشرف والتقدير لمشرفي المشروع والرسالة العلمية
+                لوحة الشرف والتقدير للباحثة والمشرفين
               </h2>
               <p className="text-xs text-slate-300 mt-1">
-                تخصيص عنوان اللوحة باللون الذهبي، إدارة أسماء المشرفين ووظائفهم، ورفع الصور (JPG/PNG) بسهولة.
+                تخصيص صورة واسم الباحثة (حكمت) في صدارة اللوحة، وإدارة بطاقات المشرفين الثلاثة ووظائفهم وصورهم.
               </p>
             </div>
           </div>
@@ -255,47 +286,376 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
         </div>
       )}
 
-      {/* Section 1: Main Board Settings (البطاقة الكبيرة) */}
-      <div className="rounded-3xl bg-[#0f0c22]/90 border border-slate-800 p-6 sm:p-7 shadow-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 font-['Tajawal']">
-            <Layers className="w-5 h-5 text-[#ffd700]" />
-            <span>1. إعدادات البطاقة الكبيرة الزجاجية (عنوان اللوحة الذهبي والبيانات)</span>
-          </h3>
-          <span className="text-xs text-amber-300 font-bold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30">
-            العنوان يظهر بلون ذهبي متألق ومختلف
-          </span>
+      {/* 🌟 القسم 1: بيانات وصورة حكمت في الأعلى 🌟 */}
+      <div className="rounded-3xl bg-gradient-to-b from-[#111936]/95 to-[#0b1024]/95 border-2 border-emerald-500/50 p-6 sm:p-7 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-500/30 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/40">
+                في صدارة اللوحة (أعلى الشاشة)
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 font-['Tajawal'] mt-1">
+              <Crown className="w-5 h-5 text-amber-300" />
+              <span>1. بيانات وصورة الباحثة (حكمت) في الأعلى</span>
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              تظهر هذه البيانات بشكل بارز في صدارة لوحة الشرف أعلى المشرفين تقديراً لجهد إعداد البيئة والرسالة.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Board Title (عنوان اللوحة) */}
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-xs sm:text-sm font-black text-amber-300 flex items-center justify-between">
-              <span>عنوان اللوحة الرئيسي (يظهر بلون ذهبي مميز):</span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                مختلف تماماً عن أسماء الدكاترة ووظائفهم
+        {/* Researcher Form Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          {/* Researcher Photo Upload Card */}
+          <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-900/80 border-2 border-emerald-400/40 text-center space-y-3">
+            <span className="text-xs font-bold text-emerald-300">صورة الباحثة (حكمت)</span>
+
+            <div className="relative">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1.5 bg-gradient-to-tr from-amber-400 via-[#ffd700] to-emerald-400 shadow-[0_0_25px_rgba(255,215,0,0.45)]">
+                <img
+                  src={researcher.imageUrl}
+                  alt={researcher.name}
+                  className="w-full h-full rounded-full object-cover border-2 border-slate-950"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.src =
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
+                  }}
+                />
+              </div>
+            </div>
+
+            <label
+              htmlFor="upload-researcher-photo"
+              className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>رفع صورة جديدة (JPG/PNG)</span>
+              <input
+                type="file"
+                id="upload-researcher-photo"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleResearcherPhotoUpload}
+                className="hidden"
+              />
+            </label>
+
+            <div className="w-full space-y-1 text-right">
+              <label className="text-[11px] text-slate-400">أو رابط الصورة المباشر:</label>
+              <input
+                type="text"
+                value={researcher.imageUrl}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    researcherInfo: {
+                      ...(prev.researcherInfo || INITIAL_RESEARCHER_INFO),
+                      imageUrl: e.target.value,
+                    },
+                  }))
+                }
+                placeholder="https://..."
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Researcher Text Fields */}
+          <div className="md:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-200">
+                  اسم الباحثة بالكامل:
+                </label>
+                <input
+                  type="text"
+                  value={researcher.name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setConfig((prev) => ({
+                      ...prev,
+                      researcher: val,
+                      researcherInfo: {
+                        ...(prev.researcherInfo || INITIAL_RESEARCHER_INFO),
+                        name: val,
+                      },
+                    }));
+                  }}
+                  placeholder="الباحثة/ حكمت عزت محمد غنيم"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none font-bold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-200">
+                  الصفة في اللوحة:
+                </label>
+                <input
+                  type="text"
+                  value={researcher.role}
+                  onChange={(e) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      researcherInfo: {
+                        ...(prev.researcherInfo || INITIAL_RESEARCHER_INFO),
+                        role: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="الباحثة ومعدة الدراسة"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-200">
+                الوظيفة والمسمى الأكاديمي:
+              </label>
+              <input
+                type="text"
+                value={researcher.title}
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    researcherInfo: {
+                      ...(prev.researcherInfo || INITIAL_RESEARCHER_INFO),
+                      title: e.target.value,
+                    },
+                  }))
+                }
+                placeholder="معيدة بقسم تكنولوجيا التعليم ومصممة بيئة الألعاب التعليمية"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-200">
+                عنوان الرسالة العلمية:
+              </label>
+              <textarea
+                rows={2}
+                value={config.researchTitle || ''}
+                onChange={(e) => setConfig((prev) => ({ ...prev, researchTitle: e.target.value }))}
+                placeholder="تصميم بيئة ألعاب تعليمية إلكترونية قائمة على التفاعل بين نمط التغذية الراجعة ونمط التعلم"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 🌟 القسم 2: المشرفين الثلاثة في الصف السفلي 🌟 */}
+      <div className="rounded-3xl bg-[#0f0c22]/90 border border-slate-800 p-6 sm:p-7 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-400/40">
+                في الصف السفلي (تحت الباحثة)
               </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 font-['Tajawal'] mt-1">
+              <Award className="w-5 h-5 text-[#ffd700]" />
+              <span>2. المشرفون الثلاثة في الصف السفلي</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              إدارة أسماء ووظائف وصور أساتذة لجنة الإشراف العلمي الثلاثة المعروضين في الصف السفلي.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAddCard}
+            id="btn-add-supervisor-card"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all shadow"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ إضافة مشرف</span>
+          </button>
+        </div>
+
+        {/* List of Supervisors in Bottom Row with Auto-alignment */}
+        <div className={`grid gap-5 ${
+          supervisorsToManage.length <= 1 ? 'grid-cols-1 max-w-md mx-auto' :
+          supervisorsToManage.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' :
+          'grid-cols-1 lg:grid-cols-3'
+        }`}>
+          {supervisorsToManage.map((card, idx) => (
+            <div
+              key={card.id}
+              className="rounded-2xl bg-gradient-to-b from-[#13102c]/95 via-[#0c091d]/95 to-[#070512]/95 border-2 border-slate-700/80 hover:border-amber-500/80 p-5 shadow-lg relative space-y-4 group transition-all"
+            >
+              {/* Card Header with Label & Actions */}
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 font-black text-xs font-['Cairo'] shadow-sm">
+                    {card.cardLabel || `المشرف ${idx + 1}`}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    #{idx + 1}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    title="تحريك لأعلى/لليمين"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveCard(idx, 'up')}
+                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="تحريك لأسفل/لليسار"
+                    disabled={idx === supervisorsToManage.length - 1}
+                    onClick={() => handleMoveCard(idx, 'down')}
+                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="حذف هذه البطاقة"
+                    onClick={() => handleDeleteCard(card.id, card.cardLabel)}
+                    className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-800 text-red-300 hover:text-white border border-red-800/60 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Photo & Upload Area */}
+              <div className="flex items-center gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+                <div className="relative shrink-0">
+                  <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-amber-500 via-[#ffd700] to-yellow-200 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
+                    <img
+                      src={card.imageUrl}
+                      alt={card.name}
+                      className="w-full h-full rounded-full object-cover border-2 border-slate-950"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.src =
+                          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  <label
+                    htmlFor={`upload-photo-${card.id}`}
+                    className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/50 text-blue-200 text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <Upload className="w-3 h-3 text-blue-300" />
+                    <span>رفع صورة (JPG)</span>
+                    <input
+                      type="file"
+                      id={`upload-photo-${card.id}`}
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handlePhotoUpload(card.id, e)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Fields: Name, Role, Job Title */}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300">
+                    اسم المشرف:
+                  </label>
+                  <input
+                    type="text"
+                    value={card.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setConfig((prev) => ({
+                        ...prev,
+                        supervisors: prev.supervisors.map((c) =>
+                          c.id === card.id ? { ...c, name: val } : c
+                        ),
+                      }));
+                    }}
+                    placeholder="أ.د/ اسم المشرف"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-white font-bold text-xs outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300">
+                    الصفة في الإشراف:
+                  </label>
+                  <input
+                    type="text"
+                    value={card.role}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setConfig((prev) => ({
+                        ...prev,
+                        supervisors: prev.supervisors.map((c) =>
+                          c.id === card.id ? { ...c, role: val } : c
+                        ),
+                      }));
+                    }}
+                    placeholder="رئيس لجنة الإشراف / مشرف علمي"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-purple-200 text-xs outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-300">
+                    الوظيفة والكلية:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={card.title}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setConfig((prev) => ({
+                        ...prev,
+                        supervisors: prev.supervisors.map((c) =>
+                          c.id === card.id ? { ...c, title: val } : c
+                        ),
+                      }));
+                    }}
+                    placeholder="أستاذ تكنولوجيا التعليم بكلية التربية النوعية جامعة طنطا"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-slate-200 text-xs outline-none resize-none leading-relaxed"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 🌟 القسم 3: الإعدادات العامة للوحة الشرف 🌟 */}
+      <div className="rounded-3xl bg-[#0f0c22]/90 border border-slate-800 p-6 sm:p-7 shadow-xl space-y-6">
+        <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 font-['Tajawal'] border-b border-slate-800 pb-3">
+          <GraduationCap className="w-5 h-5 text-blue-400" />
+          <span>3. الإعدادات العامة للوحة الشرف والعنوان الذهبي</span>
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-bold text-amber-300">
+              عنوان لوحة الشرف (الذهبي المميز):
             </label>
             <input
               type="text"
               value={config.boardTitle}
               onChange={(e) => setConfig((prev) => ({ ...prev, boardTitle: e.target.value }))}
-              placeholder="مثال: لوحة الشرف لمشرفي المشروع والرسالة العلمية"
-              className="w-full px-4 py-3 rounded-xl bg-slate-900/90 border-2 border-amber-500/60 focus:border-[#ffd700] text-amber-300 font-black text-sm sm:text-base outline-none shadow-inner"
+              placeholder="لوحة الشرف لمشرفي المشروع والرسالة العلمية"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-amber-400/50 text-amber-200 text-xs sm:text-sm font-bold outline-none"
             />
-            {/* Live Gold Preview Indicator */}
-            <div className="p-3 rounded-xl bg-[#080714] border border-[#ffd700]/30 flex items-center gap-3">
-              <span className="text-[11px] text-slate-400 font-bold">معاينة لون العنوان:</span>
-              <span className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-[#ffeaa7] via-[#ffd700] to-[#f39c12] drop-shadow-[0_2px_15px_rgba(255,215,0,0.6)] font-['Tajawal']">
-                {config.boardTitle || 'لوحة الشرف لمشرفي المشروع'}
-              </span>
-            </div>
           </div>
 
-          {/* University / Affiliation */}
           <div className="space-y-2">
             <label className="text-xs sm:text-sm font-bold text-slate-200">
-              الجامعة والكلية والقسم:
+              التبعية والجامعة:
             </label>
             <input
               type="text"
@@ -306,24 +666,9 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
             />
           </div>
 
-          {/* Researcher Name */}
-          <div className="space-y-2">
-            <label className="text-xs sm:text-sm font-bold text-slate-200">
-              اسم الباحث / الباحثة:
-            </label>
-            <input
-              type="text"
-              value={config.researcher || ''}
-              onChange={(e) => setConfig((prev) => ({ ...prev, researcher: e.target.value }))}
-              placeholder="الباحثة/ حكمت عزت محمد غنيم"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-white text-xs sm:text-sm outline-none"
-            />
-          </div>
-
-          {/* Subtitle / Department Dedication */}
           <div className="md:col-span-2 space-y-2">
             <label className="text-xs sm:text-sm font-bold text-slate-200">
-              الوصف والتقديم الأكاديمي للوحة:
+              الوصف والإهداء الأكاديمي للوحة:
             </label>
             <textarea
               rows={2}
@@ -345,7 +690,7 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
                   عرض لوحة الشرف تلقائياً بعد تسجيل دخول الطالب
                 </h4>
                 <p className="text-[11px] text-slate-300">
-                  بمجرد تسجيل دخول الطالب تظهر له البطاقة الزجاجية الكبيرة تقديراً للمشرفين قبل استكمال الرحلة.
+                  بمجرد تسجيل دخول الطالب تظهر له البطاقة الزجاجية الكبيرة تقديراً للباحثة والمشرفين قبل استكمال الرحلة.
                 </p>
               </div>
             </div>
@@ -363,200 +708,7 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Section 2: Small Cards Inside the Large Glass Card (البطاقات الصغيرة داخل البطاقة الكبيرة) */}
-      <div className="rounded-3xl bg-[#0f0c22]/90 border border-slate-800 p-6 sm:p-7 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-          <div>
-            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 font-['Tajawal']">
-              <Award className="w-5 h-5 text-[#ffd700]" />
-              <span>2. البطاقات الصغيرة داخل البطاقة الكبيرة (البطاقة 1، البطاقة 2...)</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              يمكنك تسمية البطاقات وتعديل اسم كل دكتور، وظيفته، ووضع صورته (JPG / PNG) بكل سهولة.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAddCard}
-            id="btn-add-supervisor-card"
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all shadow"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ إضافة بطاقة مشرف جديدة</span>
-          </button>
-        </div>
-
-        {/* List of Supervisor Sub-Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {config.supervisors.map((card, idx) => (
-            <div
-              key={card.id}
-              className="rounded-2xl bg-gradient-to-b from-[#13102c]/95 via-[#0c091d]/95 to-[#070512]/95 border-2 border-slate-700/80 hover:border-amber-500/80 p-5 shadow-lg relative space-y-4 group transition-all"
-            >
-              {/* Card Header with Label & Actions */}
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 font-black text-xs font-['Cairo'] shadow-sm">
-                    {card.cardLabel || `البطاقة ${idx + 1}`}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    #{idx + 1}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    title="تحريك لأعلى"
-                    disabled={idx === 0}
-                    onClick={() => handleMoveCard(idx, 'up')}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="تحريك لأسفل"
-                    disabled={idx === config.supervisors.length - 1}
-                    onClick={() => handleMoveCard(idx, 'down')}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="حذف هذه البطاقة"
-                    onClick={() => handleDeleteCard(card.id, card.cardLabel)}
-                    className="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-800 text-red-300 hover:text-white border border-red-800/60 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Photo & Upload Area */}
-              <div className="flex items-center gap-4 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-                {/* Photo Preview in Glowing Golden Ring */}
-                <div className="relative shrink-0">
-                  <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-amber-500 via-[#ffd700] to-yellow-200 shadow-[0_0_15px_rgba(255,215,0,0.4)]">
-                    <img
-                      src={card.imageUrl}
-                      alt={card.name}
-                      className="w-full h-full rounded-full object-cover border-2 border-slate-950"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.src =
-                          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80';
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Upload Buttons */}
-                <div className="flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label
-                      htmlFor={`photo-upload-${card.id}`}
-                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow transition-all"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>رفع صورة (JPG / PNG)</span>
-                    </label>
-                    <input
-                      id={`photo-upload-${card.id}`}
-                      type="file"
-                      accept="image/jpeg,image/png,image/jpg,image/webp"
-                      onChange={(e) => handlePhotoUpload(card.id, e)}
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = window.prompt('أدخل رابط الصورة (URL) المباشر:', card.imageUrl);
-                        if (url && url.trim()) {
-                          handleUpdateCardField(card.id, 'imageUrl', url.trim());
-                        }
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1 cursor-pointer"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" />
-                      <span>رابط URL</span>
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    ضع الصورة بكل سهولة بصيغة JPG أو PNG لتظهر مباشرة داخل الإطار الذهبي.
-                  </p>
-                </div>
-              </div>
-
-              {/* Form Inputs for this Card */}
-              <div className="space-y-3">
-                {/* 1. Card Label (تسمية البطاقة: البطاقة 1، البطاقة 2...) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-amber-300 block mb-1">
-                      تسمية البطاقة (مثال: البطاقة 1):
-                    </label>
-                    <input
-                      type="text"
-                      value={card.cardLabel}
-                      onChange={(e) => handleUpdateCardField(card.id, 'cardLabel', e.target.value)}
-                      placeholder="البطاقة 1"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-amber-300 font-bold text-xs outline-none"
-                    />
-                  </div>
-
-                  {/* 2. Supervision Role (الصفة في الإشراف) */}
-                  <div>
-                    <label className="text-[11px] font-bold text-purple-300 block mb-1">
-                      الصفة في الإشراف (الوسام):
-                    </label>
-                    <input
-                      type="text"
-                      value={card.role}
-                      onChange={(e) => handleUpdateCardField(card.id, 'role', e.target.value)}
-                      placeholder="مثال: رئيس لجنة الإشراف العلمي"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-purple-400 text-purple-200 text-xs outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* 3. Doctor's Name (اسم الدكتور / المشرف) */}
-                <div>
-                  <label className="text-[11px] font-bold text-white block mb-1">
-                    اسم الأستاذ الدكتور / المشرف (يظهر بلون أبيض ناصع):
-                  </label>
-                  <input
-                    type="text"
-                    value={card.name}
-                    onChange={(e) => handleUpdateCardField(card.id, 'name', e.target.value)}
-                    placeholder="مثال: أ.د/ حسناء عبد العاطي الطباخ"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-white font-black text-sm outline-none"
-                  />
-                </div>
-
-                {/* 4. Doctor's Job / Academic Position (وظيفة الدكتور) */}
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    الوظيفة والدرجة الأكاديمية (وظيفتهم):
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={card.title}
-                    onChange={(e) => handleUpdateCardField(card.id, 'title', e.target.value)}
-                    placeholder="أستاذ تكنولوجيا التعليم ورئيس القسم بكلية التربية النوعية جامعة طنطا"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-slate-200 text-xs outline-none resize-none leading-relaxed"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Section 3: Bottom Controls (حفظ واستعادة) */}
+      {/* Section 4: Bottom Controls (حفظ واستعادة) */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-[#0c091d] border border-slate-800">
         <button
           type="button"
@@ -564,7 +716,7 @@ export const AdminSupervisorsHonorManager: React.FC = () => {
           className="text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1.5 cursor-pointer transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span>استعادة الضبط الافتراضي (مشرفي جامعة طنطا)</span>
+          <span>استعادة الضبط الافتراضي (مشرفي وباحثة جامعة طنطا)</span>
         </button>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
