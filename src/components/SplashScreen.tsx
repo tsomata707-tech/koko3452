@@ -86,7 +86,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onEnter, onOpenAdmin
             <KeyRound className="w-3.5 h-3.5 text-amber-400" />
             <span>دخول الإدارة والمشرفين</span>
           </button>
-          <span className="text-[11px] text-slate-500">جامعة حلوان - كلية التربية</span>
+          <span className="text-[11px] text-slate-400 font-bold">جامعة طنطا - كلية التربية النوعية</span>
         </div>
       </div>
     </div>

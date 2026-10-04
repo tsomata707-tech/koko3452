@@ -53,7 +53,9 @@ import {
   Search,
   Zap,
   Wifi,
+  Video,
 } from 'lucide-react';
+import { AdminVideoManager } from './AdminVideoManager';
 
 
 interface AdminPanelProps {
@@ -62,7 +64,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsStudent }) => {
-  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'security' | 'overview'>('game_analytics');
+  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'videos' | 'security' | 'overview'>('game_analytics');
   const [settings, setSettings] = useState<AdminSettings>(getAdminSettings());
   const [users, setUsers] = useState<PortalUser[]>(getPortalUsers());
   const [logs, setLogs] = useState<ActivityLog[]>(getActivityLogs());
@@ -309,7 +311,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           aria-label="تبويبات لوحة المشرف"
           className="px-4 sm:px-6 pt-3 pb-3 bg-[#0a0816] border-b border-[#d4af37]/30"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {/* 1. لوحة النتائج */}
             <button
               type="button"
@@ -358,7 +360,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               <span className="truncate">دليل الطلاب وحسابات الدخول</span>
             </button>
 
-            {/* 4. باسوورد الأدمن والأمان */}
+            {/* 4. إدارة ورفع الفيديوهات */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('videos')}
+              id="tab-videos"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'videos'
+                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.4)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-blue-500/40'
+              }`}
+            >
+              <Video className={`w-4 h-4 shrink-0 ${activeTab === 'videos' ? 'text-white' : 'text-blue-400'}`} />
+              <span className="truncate">إدارة ورفع الفيديوهات</span>
+            </button>
+
+            {/* 5. باسوورد الأدمن والأمان */}
             <button
               type="button"
               onClick={() => setActiveTab('security')}
@@ -1395,6 +1412,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                 </table>
               </div>
             </div>
+          )}
+
+          {/* TAB 2.5: EDUCATIONAL VIDEOS MANAGEMENT & TARGET LOCATIONS */}
+          {activeTab === 'videos' && (
+            <AdminVideoManager />
           )}
 
           {/* TAB 3: ADMIN PASSWORD & SECURITY */}

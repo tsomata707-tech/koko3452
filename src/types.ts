@@ -116,3 +116,25 @@ export interface GroupRoomState {
   lastUpdatedAt: string;
 }
 
+export interface VideoSlotDef {
+  slotId: string;
+  name: string;
+  levelNumber?: number;
+  description: string;
+  recommendedDuration: string;
+}
+
+export interface EducationalVideo {
+  id: string;
+  title: string;
+  description: string;
+  targetSlotId: string; // e.g. 'level-1', 'level-2', ..., 'level-10', 'app-task'
+  targetSlotName: string;
+  videoUrl: string; // YouTube, MP4 or file
+  videoType: 'youtube' | 'mp4' | 'embed' | 'file';
+  duration?: string;
+  addedAt: string;
+  updatedAt?: string;
+  isActive: boolean;
+}
+

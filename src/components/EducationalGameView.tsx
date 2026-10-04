@@ -704,29 +704,31 @@ export const EducationalGameView: React.FC<EducationalGameViewProps> = ({ userna
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
           <div className="bg-[#0f0c1f] border-2 border-[#ffd700] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-right shadow-[0_0_60px_rgba(212,175,55,0.4)] space-y-5">
             {feedbackModal.isImmediate ? (
-              /* IMMEDIATE FEEDBACK CONTENT (G1 & G3) */
+              /* SCREEN 10: IMMEDIATE FEEDBACK SCREEN (G1 & G3) */
               <>
                 <div className="text-center space-y-2">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto text-3xl shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                    🎉
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto text-3xl shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-bounce">
+                    ✔️
                   </div>
                   <span className="px-3 py-0.5 rounded-full bg-emerald-950 border border-emerald-500 text-emerald-300 text-xs font-black font-['Cairo']">
-                    تغذية راجعة فورية مباشرة
+                    التغذية الراجعة الفورية المباشرة
                   </span>
                   <h3 className="text-2xl font-black text-white font-['Tajawal']">
-                    رائع يا بطل! تم إنجاز المستوى {feedbackModal.result.levelNumber} بنجاح
+                    أحسنت! إجابتك صحيحة وأتقنت مهارات المرحلة {feedbackModal.result.levelNumber}
                   </h3>
                   <p className="text-xs text-slate-300 font-['Cairo']">
-                    تم رصد نتيجتك اللحظية وإرسالها إلى لوحة المشرف والأدمن في التو واللحظة!
+                    تُستخدم أدوات Adobe Captivate 2019 لبناء بيئات وتجارب تعليمية تفاعلية غنية.
                   </p>
                 </div>
 
-                {/* Score badge */}
+                {/* Score badge & Team or Individual Points */}
                 <div className="p-4 rounded-2xl bg-slate-950 border border-[#ffd700]/50 flex items-center justify-around text-center">
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-['Cairo']">الدرجة المحققة</span>
-                    <span className="text-2xl font-black text-emerald-400 font-['Outfit']">
-                      {feedbackModal.result.score} / {feedbackModal.result.maxScore}
+                    <span className="text-[10px] text-slate-400 block font-['Cairo']">
+                      {isCollaborative ? 'نقاط مضافة لرصيد الفريق' : 'نقاط المكافأة المكتسبة'}
+                    </span>
+                    <span className="text-2xl font-black text-[#ffd700] font-['Outfit']">
+                      +{feedbackModal.result.score} ⭐ XP
                     </span>
                   </div>
                   <div className="w-px h-10 bg-slate-800" />
@@ -738,55 +740,103 @@ export const EducationalGameView: React.FC<EducationalGameViewProps> = ({ userna
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-200 font-['Cairo'] leading-relaxed">
-                  ✅ تم قفل هذا المستوى لمنع إعادة الإجابة، وتم فتح المستوى التالي في خريطة اللعبة!
+                {/* Detailed Questions Feedback Breakdown */}
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {feedbackModal.levelDef.questions.map((q, idx) => {
+                    const isCorrect = feedbackModal.result.answers[q.id] === q.correctIndex;
+                    return (
+                      <div
+                        key={q.id}
+                        className={`p-3 rounded-xl border text-xs leading-relaxed ${
+                          isCorrect
+                            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+                            : 'bg-red-950/40 border-red-500/50 text-red-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-bold mb-1">
+                          <span>نشاط {idx + 1}: {isCorrect ? '✔️ إجابة صحيحة (+50 XP)' : '❌ إجابة غير دقيقة (0 XP)'}</span>
+                        </div>
+                        <p className="text-[11px] opacity-90">{q.explanation}</p>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="pt-2 flex justify-center">
                   <button
                     type="button"
                     onClick={handleNextLevel}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>الانتقال للمستوى التالي 🚀</span>
+                    <span>التالي (المرحلة التالية) 🚀</span>
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 </div>
               </>
             ) : (
-              /* DEFERRED FEEDBACK CONTENT (G2 & G4) */
+              /* SCREEN 11: DELAYED FEEDBACK SCREEN (G2 & G4) */
               <>
                 <div className="text-center space-y-2">
                   <div className="w-16 h-16 rounded-3xl bg-purple-500/20 border-2 border-purple-400 text-purple-300 flex items-center justify-center mx-auto text-3xl shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                    ⏳
+                    📊
                   </div>
                   <span className="px-3 py-0.5 rounded-full bg-purple-950 border border-purple-500 text-purple-300 text-xs font-black font-['Cairo']">
-                    نمط التغذية الراجعة المرجئة (Deferred)
+                    تقرير أداء المرحلة (التغذية الراجعة المرجأة)
                   </span>
                   <h3 className="text-2xl font-black text-white font-['Tajawal']">
-                    تم اعتماد وحفظ إجاباتك بنجاح ونقلك للمستوى التالي 🔒
+                    تقرير أداء المرحلة {feedbackModal.result.levelNumber}
                   </h3>
+                  <p className="text-xs text-slate-300 font-['Cairo']">
+                    لقد أكملت الأنشطة الخاصة بـ [{feedbackModal.levelDef.shortTitle}]. يمكنك الآن مراجعة أدائك الإجمالي.
+                  </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-500/60 text-xs text-purple-200 font-['Cairo'] leading-relaxed space-y-2">
-                  <p>
-                    📌 <strong>وفقاً لضوابط مجموعتك التجريبية (التغذية المرجئة):</strong>
-                  </p>
-                  <p className="text-slate-300">
-                    تم تسجيل إجاباتك كاملة وإرسالها فورياً إلى لوحة تحكم الأدمن والمشرف، بينما سيتم إرجاء إعلان درجاتك والتقرير التفصيلي حتى الانتهاء من جميع المراحل العشرة لتنمية التفكير التأملي والتقييم التراكمي.
-                  </p>
-                  <p className="text-amber-300 font-bold">
-                    🔒 تم قفل المستوى {feedbackModal.result.levelNumber} بنجاح ولا يمكن العودة إليه مرة أخرى.
-                  </p>
+                {/* Table showing activities, status, and points earned according to Storyboard */}
+                <div className="p-4 rounded-2xl bg-[#090714] border border-purple-500/40 space-y-2.5">
+                  <div className="space-y-1.5 font-mono text-xs">
+                    {feedbackModal.levelDef.questions.map((q, idx) => {
+                      const isCorrect = feedbackModal.result.answers[q.id] === q.correctIndex;
+                      return (
+                        <div
+                          key={q.id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800"
+                        >
+                          <span className="text-slate-300 font-['Cairo'] font-bold">
+                            نشاط {idx + 1}: {q.question.substring(0, 32)}...
+                          </span>
+                          <span
+                            className={`font-black font-mono ${
+                              isCorrect ? 'text-emerald-400' : 'text-red-400'
+                            }`}
+                          >
+                            {isCorrect ? '✔️ +50 نقطة' : '❌ 0 نقطة'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-300 font-['Cairo']">
+                      إجمالي نقاط المرحلة المكتسبة:
+                    </span>
+                    <span className="text-lg font-black text-[#ffd700] font-['Outfit']">
+                      +{feedbackModal.result.score} ⭐
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/50 text-xs text-purple-200 font-['Cairo'] leading-relaxed">
+                  💡 <strong>التغذية الراجعة العامة:</strong> لقد أنجزت خطوات هذه المرحلة بنجاح وفق متطلبات المعالجة التجريبية المرجأة، وتم حفظ إجاباتك وتحديث سجلك التراكمي في لوحة الإشراف.
                 </div>
 
                 <div className="pt-2 flex justify-center">
                   <button
                     type="button"
                     onClick={handleNextLevel}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>متابعة التحدي في المستوى التالي 🚀</span>
+                    <span>عرض الإنجاز والمتابعة 🚀</span>
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 </div>

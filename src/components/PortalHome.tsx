@@ -12,8 +12,13 @@ import { InstructionsScreen } from './InstructionsScreen';
 import { ProfileScreen } from './ProfileScreen';
 import { LearningMapScreen } from './LearningMapScreen';
 import { LeaderboardOrTeamBoard } from './LeaderboardOrTeamBoard';
+import { ApplicationTaskModal } from './ApplicationTaskModal';
+import { PointsCelebrationModal } from './PointsCelebrationModal';
+import { ProgressBoardView } from './ProgressBoardView';
+import { DesignChallengeView } from './DesignChallengeView';
 import { getGroupByUsername } from '../data/studentAccounts';
-import { getStudentProgress } from '../utils/gameStorage';
+import { getStudentProgress, getAllStudentsProgress, saveAllStudentsProgress } from '../utils/gameStorage';
+import { GAME_LEVELS_DATA } from '../data/gameLevelsData';
 import {
   GraduationCap,
   Trophy,
@@ -29,6 +34,8 @@ import {
   User,
   HelpCircle,
   Award,
+  FileCheck,
+  CheckCircle,
 } from 'lucide-react';
 
 interface PortalHomeProps {
@@ -42,13 +49,16 @@ export type PortalSection =
   | 'instructions'
   | 'profile'
   | 'game'
+  | 'task'
+  | 'progress'
+  | 'challenge'
   | 'ranking'
   | 'honor'
   | 'groups'
   | 'levels';
 
 export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) => {
-  // Main Section Navigation - defaults to 'welcome' on first login for smooth onboarding, or 'map'
+  // Main Section Navigation - defaults to 'welcome' on first login for smooth onboarding
   const [activeMainSection, setActiveMainSection] = useState<PortalSection>('welcome');
 
   // Detect user's research group based on username (G1_Cp_01 -> G1)
@@ -56,7 +66,15 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
   const isCollaborative = userGroupMeta?.learningMode === 'تعاوني';
 
   // Student Game Progress
-  const studentGame = getStudentProgress(username);
+  const [studentGame, setStudentGame] = useState(() => getStudentProgress(username));
+
+  // Modals for Task and Celebration
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<{
+    points: number;
+    total: number;
+    message: string;
+  } | null>(null);
 
   // Selected Research Group defaults strictly to student's assigned group
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
@@ -68,6 +86,10 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
       setSelectedGroupId(userGroupMeta.id);
     }
   }, [username]);
+
+  const refreshProgress = () => {
+    setStudentGame(getStudentProgress(username));
+  };
 
   // Educational Levels State
   const [activeModuleId, setActiveModuleId] = useState<string>(CURRICULUM_MODULES[0].id);
@@ -104,10 +126,38 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
     completedCountByModule[mod.id] = count;
   });
 
-  const overallPercentage =
-    totalObjectivesCount > 0
-      ? Math.round((totalCompletedCount / totalObjectivesCount) * 100)
-      : 0;
+  const handleTaskComplete = (bonusPoints: number) => {
+    const all = getAllStudentsProgress();
+    const prog = getStudentProgress(username);
+    prog.totalScore += bonusPoints;
+    saveAllStudentsProgress(all);
+    refreshProgress();
+    setShowTaskModal(false);
+
+    // Open points celebration screen (Screen 13)
+    setCelebrationData({
+      points: bonusPoints,
+      total: prog.totalScore,
+      message: `لقد أنهيت المهمة التطبيقية للمرحلة ${prog.currentLevel} بنجاح!`,
+    });
+  };
+
+  const handleChallengeSolve = (bonusPoints: number) => {
+    const all = getAllStudentsProgress();
+    const prog = getStudentProgress(username);
+    prog.totalScore += bonusPoints;
+    saveAllStudentsProgress(all);
+    refreshProgress();
+
+    setCelebrationData({
+      points: bonusPoints,
+      total: prog.totalScore,
+      message: 'رائع! لقد قمت بحل مشكلة التصميم في Adobe Captivate بنجاح وحصدت نقاط التميز.',
+    });
+  };
+
+  const currentLevelDef =
+    GAME_LEVELS_DATA.find((l) => l.levelNumber === studentGame.currentLevel) || GAME_LEVELS_DATA[0];
 
   return (
     <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-6 space-y-6" id="portal-dashboard">
@@ -136,7 +186,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
                 رحلة مصمم الوسائط المتعددة: مرحباً بك، <span className="text-[#ffd700] font-mono">{username}</span>
               </h1>
               <p className="text-xs text-slate-300 mt-1 font-['Cairo']">
-                {userGroupMeta ? userGroupMeta.name : RESEARCH_INFO.title}
+                جامعة طنطا - كلية التربية النوعية • قسم تكنولوجيا التعليم
               </p>
             </div>
           </div>
@@ -166,7 +216,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           </div>
         </div>
 
-        {/* Master Storyboard Navigation Bar: All 9 key sections accessible in 1 click */}
+        {/* Master Storyboard Navigation Bar: All key screens accessible in 1 click */}
         <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#070a16] border border-blue-500/30 shadow-inner w-full overflow-x-auto">
             {/* 1. خريطة التعلم */}
@@ -184,7 +234,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>🗺️ خريطة التعلم (10 مراحل)</span>
             </button>
 
-            {/* 2. اللعبة والنشاط */}
+            {/* 2. النشاط والتقييم */}
             <button
               type="button"
               id="tab-educational-game"
@@ -199,7 +249,33 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>🎮 النشاط والتقييم اللحظي</span>
             </button>
 
-            {/* 3. لوحة المتصدرين أو إنجاز الفريق */}
+            {/* 3. المهمة التطبيقية */}
+            <button
+              type="button"
+              id="tab-task"
+              onClick={() => setShowTaskModal(true)}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap text-amber-300 hover:text-white bg-[#141029] hover:bg-[#1a1636] border border-amber-500/40`}
+            >
+              <FileCheck className="w-4 h-4 text-[#ffd700]" />
+              <span>🛠️ المهمة التطبيقية (+50 ⭐)</span>
+            </button>
+
+            {/* 4. لوحة التقدم العام */}
+            <button
+              type="button"
+              id="tab-progress-board"
+              onClick={() => setActiveMainSection('progress')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'progress'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>📊 لوحة التقدم العام</span>
+            </button>
+
+            {/* 5. لوحة المتصدرين أو إنجاز الفريق */}
             <button
               type="button"
               id="tab-ranking-or-team"
@@ -215,17 +291,32 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               {isCollaborative ? (
                 <>
                   <Users className="w-4 h-4" />
-                  <span>👥 إنجاز الفريق المشترك</span>
+                  <span>👥 لوحة الفرق (إنجاز الفريق)</span>
                 </>
               ) : (
                 <>
                   <Trophy className="w-4 h-4" />
-                  <span>🥇 لوحة المتصدرين التنافسية</span>
+                  <span>🥇 لوحة المتصدرين</span>
                 </>
               )}
             </button>
 
-            {/* 4. الملف الشخصي */}
+            {/* 6. التحدي ومشكلة التصميم */}
+            <button
+              type="button"
+              id="tab-challenge"
+              onClick={() => setActiveMainSection('challenge')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'challenge'
+                  ? 'bg-gradient-to-r from-pink-600 to-rose-700 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>⚡ التحدي ومشكلة التصميم</span>
+            </button>
+
+            {/* 7. الملف الشخصي */}
             <button
               type="button"
               id="tab-profile"
@@ -240,7 +331,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>👤 الملف الشخصي</span>
             </button>
 
-            {/* 5. قواعد الرحلة والتعليمات */}
+            {/* 8. قواعد الرحلة */}
             <button
               type="button"
               id="tab-instructions"
@@ -255,7 +346,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>📋 قواعد الرحلة</span>
             </button>
 
-            {/* 6. شاشة الترحيب */}
+            {/* 9. شاشة الترحيب */}
             <button
               type="button"
               id="tab-welcome"
@@ -269,7 +360,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>👋 بطاقة الترحيب</span>
             </button>
 
-            {/* 7. لوحة الشرف */}
+            {/* 10. لوحة الشرف */}
             <button
               type="button"
               id="tab-honor-board"
@@ -284,7 +375,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>لوحة الشرف</span>
             </button>
 
-            {/* 8. الأربع مجموعات */}
+            {/* 11. الأربع مجموعات */}
             <button
               type="button"
               id="tab-research-groups"
@@ -299,7 +390,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               <span>المجموعات الـ 4</span>
             </button>
 
-            {/* 9. محتوى ومحاكي Captivate */}
+            {/* 12. محتوى ومحاكي Captivate */}
             <button
               type="button"
               id="tab-educational-levels"
@@ -311,7 +402,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>المحتوى والمحاكي العملي</span>
+              <span>المحتوى والمحاكي</span>
             </button>
           </div>
         </div>
@@ -352,22 +443,40 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
         />
       )}
 
-      {/* 5. اللعبة التعليمية والنشاط والتغذية الراجعة المتمايزة (Screens 8, 9, 10) */}
+      {/* 5. اللعبة التعليمية والنشاط والتغذية الراجعة المتمايزة (Screens 8, 9, 10, 11) */}
       {activeMainSection === 'game' && (
         <EducationalGameView username={username} />
       )}
 
-      {/* 6. لوحة المتصدرين الفردية (التنافسي) / لوحة إنجاز الفريق المشترك (التعاوني) (Screen 10 & 11) */}
+      {/* 6. لوحة التقدم العام (Screen 14) */}
+      {activeMainSection === 'progress' && (
+        <ProgressBoardView
+          username={username}
+          onSelectStage={(lvlNum) => {
+            setActiveMainSection('game');
+          }}
+        />
+      )}
+
+      {/* 7. التحدي ومشكلة التصميم (Screen 17) */}
+      {activeMainSection === 'challenge' && (
+        <DesignChallengeView
+          currentLevel={studentGame.currentLevel}
+          onSolveChallenge={handleChallengeSolve}
+        />
+      )}
+
+      {/* 8. لوحة المتصدرين الفردية (التنافسي) / لوحة الفرق (التعاوني) (Screen 15 & 16) */}
       {activeMainSection === 'ranking' && (
         <LeaderboardOrTeamBoard currentUsername={username} />
       )}
 
-      {/* 7. لوحة الشرف العامة */}
+      {/* 9. لوحة الشرف العامة */}
       {activeMainSection === 'honor' && (
         <HonorBoard currentUsername={username} />
       )}
 
-      {/* 8. المجموعات البحثية الأربعة */}
+      {/* 10. المجموعات البحثية الأربعة */}
       {activeMainSection === 'groups' && (
         <ResearchGroups
           selectedGroupId={selectedGroupId}
@@ -376,7 +485,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
         />
       )}
 
-      {/* 9. المحتوى التعليمي الكامل ومحاكي Adobe Captivate 2019 التفاعلي */}
+      {/* 11. المحتوى التعليمي الكامل ومحاكي Adobe Captivate 2019 التفاعلي */}
       {activeMainSection === 'levels' && (
         <div className="flex flex-col lg:flex-row items-start gap-6">
           <RightSidebarModules
@@ -404,6 +513,28 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
             onToggleObjective={handleToggleObjective}
           />
         </div>
+      )}
+
+      {/* Screen 12: المهمة التطبيقية Modal */}
+      {showTaskModal && (
+        <ApplicationTaskModal
+          levelNumber={studentGame.currentLevel}
+          stageTitle={currentLevelDef.title}
+          isCollaborative={isCollaborative}
+          onCompleteTask={handleTaskComplete}
+          onClose={() => setShowTaskModal(false)}
+        />
+      )}
+
+      {/* Screen 13: شاشة النقاط والاحتفال Modal */}
+      {celebrationData && (
+        <PointsCelebrationModal
+          pointsGained={celebrationData.points}
+          totalScore={celebrationData.total}
+          isCollaborative={isCollaborative}
+          message={celebrationData.message}
+          onContinue={() => setCelebrationData(null)}
+        />
       )}
 
       {/* Bottom Footer Utilities */}

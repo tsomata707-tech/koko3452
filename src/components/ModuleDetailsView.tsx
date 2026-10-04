@@ -17,7 +17,9 @@ import {
   Layers,
   ArrowRight,
   Info,
+  Video,
 } from 'lucide-react';
+import { getVideoBySlot } from '../utils/videoStorage';
 
 interface ModuleDetailsViewProps {
   module: CurriculumModule;
@@ -38,7 +40,8 @@ export const ModuleDetailsView: React.FC<ModuleDetailsViewProps> = ({
   completedObjectives,
   onToggleObjective,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'objectives' | 'simulator' | 'research'>('objectives');
+  const [activeSubTab, setActiveSubTab] = useState<'objectives' | 'video' | 'simulator' | 'research'>('objectives');
+  const moduleVideo = getVideoBySlot(`level-${module.number}`);
 
   // Compute completion rate
   const total = module.objectives.length;
@@ -119,6 +122,19 @@ export const ModuleDetailsView: React.FC<ModuleDetailsViewProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             <span>الأهداف السلوكية والمهام ({total})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('video')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeSubTab === 'video'
+                ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Video className="w-4 h-4" />
+            <span>الفيديو التعليمي {moduleVideo ? '(متاح 🎬)' : ''}</span>
           </button>
 
           <button
@@ -218,6 +234,56 @@ export const ModuleDetailsView: React.FC<ModuleDetailsViewProps> = ({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Sub Tab 1.5: Video Player */}
+      {activeSubTab === 'video' && (
+        <div className="p-6 rounded-3xl bg-[#090b1c] border-2 border-blue-500/40 shadow-xl space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <span className="text-xs font-bold text-amber-300 font-mono">
+                الموضع: المرحلة {module.number} ({module.title})
+              </span>
+              <h3 className="text-lg font-black text-white font-['Tajawal'] mt-0.5">
+                {moduleVideo ? moduleVideo.title : `فيديو شرح ${module.title}`}
+              </h3>
+            </div>
+            {moduleVideo?.duration && (
+              <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                المدة: {moduleVideo.duration}
+              </span>
+            )}
+          </div>
+
+          {moduleVideo ? (
+            <div>
+              <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border-2 border-slate-800 shadow-2xl mb-4">
+                {moduleVideo.videoType === 'youtube' || moduleVideo.videoUrl.includes('youtube.com') || moduleVideo.videoUrl.includes('youtu.be') ? (
+                  <iframe
+                    src={moduleVideo.videoUrl}
+                    title={moduleVideo.title}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={moduleVideo.videoUrl} controls className="w-full h-full object-contain" />
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                {moduleVideo.description}
+              </p>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-slate-400 space-y-3 bg-slate-950/40 rounded-2xl border border-dashed border-slate-800">
+              <Video className="w-12 h-12 text-slate-600 mx-auto" />
+              <p className="text-sm font-bold">لا يوجد فيديو مرفوع حالياً لهذه المرحلة.</p>
+              <p className="text-xs text-slate-500">
+                يمكن للمشرف رفع وإرفاق فيديو لهذه المرحلة من خلال تبويب <strong>"إدارة ورفع الفيديوهات"</strong> في لوحة تحكم الأدمن.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
