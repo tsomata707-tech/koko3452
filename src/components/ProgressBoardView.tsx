@@ -51,7 +51,7 @@ export const ProgressBoardView: React.FC<ProgressBoardViewProps> = ({ username, 
             لوحة متابعة إنجاز المراحل المنهجية العشر
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            استعرض حالة تقدمك خطوة بخطوة في رحلتك لإتقان Adobe Captivate 2019. تفتح المراحل بالتوالي تباعاً بمجرد إتمام كل مرحلة بنجاح.
+            استعرض حالة تقدمك خطوة بخطوة في بيئة الألعاب التعليمية الإلكترونية لتنمية مهارات إنتاج وتصميم الوسائط المتعددة. تفتح المراحل بالتوالي تباعاً بمجرد إتمام كل مرحلة بنجاح.
           </p>
         </div>
 

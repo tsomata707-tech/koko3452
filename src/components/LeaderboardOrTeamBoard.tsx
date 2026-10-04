@@ -15,7 +15,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { getGroupByUsername } from '../data/studentAccounts';
-import { getStudentProgress } from '../utils/gameStorage';
+import { getStudentProgress, getAllStudentsProgress } from '../utils/gameStorage';
 import { CARTOON_AVATARS } from '../data/gameLevelsData';
 
 interface LeaderboardOrTeamBoardProps {
@@ -27,27 +27,29 @@ export const LeaderboardOrTeamBoard: React.FC<LeaderboardOrTeamBoardProps> = ({ 
   const isCollaborative = groupMeta?.learningMode === 'تعاوني';
   const groupCode = groupMeta?.code || 'G1';
   const myProgress = getStudentProgress(currentUsername);
+  const allProgress = getAllStudentsProgress();
 
-  // Generate the 15 students of this specific group
+  // Load the 15 students of this specific group with their REAL stored progress
   const groupStudents = Array.from({ length: 15 }, (_, i) => {
     const pad = i + 1 < 10 ? `0${i + 1}` : `${i + 1}`;
     const uName = `${groupCode}_Cp_${pad}`;
     const isMe = uName.toLowerCase() === currentUsername.toLowerCase();
-    
-    // Deterministic scores for peers, real score for current user
-    const avatar = CARTOON_AVATARS[i % CARTOON_AVATARS.length];
-    const peerScore = Math.max(100, Math.floor(650 - i * 32 + (i % 3) * 15));
-    const finalScore = isMe ? myProgress.totalScore : peerScore;
-    const completedLevels = isMe ? Object.keys(myProgress.completedLevels).length : Math.max(1, Math.min(10, Math.floor(finalScore / 60)));
+    const realStudent = allProgress[uName] || (isMe ? myProgress : null);
+
+    const avatar =
+      CARTOON_AVATARS.find((a) => a.id === realStudent?.avatarId) ||
+      CARTOON_AVATARS[i % CARTOON_AVATARS.length];
+    const realScore = realStudent ? realStudent.totalScore : 0;
+    const completedLevels = realStudent ? Object.keys(realStudent.completedLevels || {}).length : 0;
 
     return {
       username: uName,
       fullName: `طالب (${uName})`,
       isMe,
       avatar,
-      score: finalScore,
+      score: realScore,
       completedLevels,
-      badge: avatar.title,
+      badge: realStudent?.badges?.[0] || (realScore > 0 ? avatar.title : 'في بداية المسار'),
     };
   });
 

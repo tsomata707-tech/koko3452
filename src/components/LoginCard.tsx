@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, KeyRound, Check, Sparkles, HelpCircle, ArrowRight } from 'lucide-react';
 import { CpLogo } from './CpLogo';
 import { WhatsAppSupport } from './WhatsAppSupport';
 import { getPortalUsers, addActivityLog } from '../utils/adminStorage';
 import { normalizeStudentUsername, getStudentPassword } from '../data/studentAccounts';
+
+const REMEMBERED_CREDS_KEY = 'cp_remembered_credentials_v2';
 
 interface LoginCardProps {
   onLoginSuccess: (username: string) => void;
@@ -19,6 +21,36 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onLoginSuccess, onOpenAdmi
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBERED_CREDS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.username) setUsername(parsed.username);
+        if (parsed.password) setPassword(parsed.password);
+        setRememberMe(true);
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const saveOrClearCredentials = (finalUser: string, finalPass: string) => {
+    try {
+      if (rememberMe) {
+        localStorage.setItem(
+          REMEMBERED_CREDS_KEY,
+          JSON.stringify({ username: finalUser, password: finalPass })
+        );
+      } else {
+        localStorage.removeItem(REMEMBERED_CREDS_KEY);
+      }
+    } catch {
+      // Ignore
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +100,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onLoginSuccess, onOpenAdmi
           return;
         }
 
+        saveOrClearCredentials(matched.username, password);
         addActivityLog(`تسجيل دخول ناجح: ${matched.username}`, matched.username, 'success');
         onLoginSuccess(matched.username);
       } else {
@@ -76,12 +109,14 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onLoginSuccess, onOpenAdmi
         if (match) {
           const expectedPass = getStudentPassword(`G${match[1]}` as any, match[2]);
           if (password === expectedPass || password === '123456' || password === normalized) {
+            saveOrClearCredentials(normalized, password);
             addActivityLog(`تسجيل دخول معتمد للطالب: ${normalized}`, normalized, 'success');
             onLoginSuccess(normalized);
             return;
           }
         }
         // General fallback login
+        saveOrClearCredentials(rawInput, password);
         addActivityLog(`تسجيل دخول معتمد: ${rawInput}`, rawInput, 'success');
         onLoginSuccess(rawInput);
       }

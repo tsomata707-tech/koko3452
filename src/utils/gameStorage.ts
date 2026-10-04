@@ -3,19 +3,19 @@ import { GAME_LEVELS_DATA, CARTOON_AVATARS } from '../data/gameLevelsData';
 import { getGroupByUsername } from '../data/studentAccounts';
 import { addActivityLog } from './adminStorage';
 
-const GAME_STORAGE_KEY = 'cp_game_progress_v2';
+const GAME_STORAGE_KEY = 'cp_real_game_progress_v4';
 
 export function getAllStudentsProgress(): Record<string, StudentGameProgress> {
   try {
     const raw = localStorage.getItem(GAME_STORAGE_KEY);
     if (!raw) {
-      const seeded = generateInitialGameSeeding();
-      localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(seeded));
-      return seeded;
+      const cleanReal = generateCleanRealStudents();
+      localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(cleanReal));
+      return cleanReal;
     }
     return JSON.parse(raw);
   } catch {
-    return {};
+    return generateCleanRealStudents();
   }
 }
 
@@ -32,7 +32,10 @@ export function getStudentProgress(username: string): StudentGameProgress {
   }
 
   // Assign a default cartoon avatar based on username hash
-  const avatarIndex = Math.abs(cleanUsername.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % CARTOON_AVATARS.length;
+  const avatarIndex =
+    Math.abs(cleanUsername.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) %
+    CARTOON_AVATARS.length;
+
   const newProg: StudentGameProgress = {
     username: cleanUsername,
     avatarId: CARTOON_AVATARS[avatarIndex].id,
@@ -78,7 +81,7 @@ export function submitLevelChallenge(
     throw new Error('Level not found');
   }
 
-  // Calculate score
+  // Calculate real score based on actual student answers
   let scoreGained = 0;
   let maxScore = 0;
 
@@ -91,7 +94,7 @@ export function submitLevelChallenge(
 
   // Determine feedback mode from group:
   // G1 (فوري) & G3 (فوري) -> immediate feedback to student
-  // G2 (مرجأ) & G4 (مرجأ) -> deferred feedback (hidden from student until course completion, but visible to admin immediately)
+  // G2 (مرجأ) & G4 (مرجأ) -> deferred feedback
   const groupMeta = getGroupByUsername(username);
   const isImmediate = groupMeta ? groupMeta.feedbackMode === 'فورية' : true;
 
@@ -105,29 +108,30 @@ export function submitLevelChallenge(
     feedbackRevealedToStudent: isImmediate,
   };
 
-  // Lock this level permanently
+  // Record this level permanently
   prog.completedLevels[levelNumber] = levelResult;
   prog.totalScore += scoreGained;
-
-  // Add badge if not already owned
-  if (!prog.badges.includes(levelDef.badgeName)) {
-    prog.badges.push(levelDef.badgeName);
-  }
-
-  // Advance to next level if finishing current level
-  if (prog.currentLevel === levelNumber && levelNumber < 10) {
-    prog.currentLevel = levelNumber + 1;
-  }
-
   prog.lastActive = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+  // Advance level if passed
+  const passThreshold = Math.floor(maxScore * 0.5); // 50% pass rate
+  if (scoreGained >= passThreshold) {
+    if (levelNumber === prog.currentLevel && levelNumber < 10) {
+      prog.currentLevel = levelNumber + 1;
+    }
+    // Award badge
+    if (!prog.badges.includes(levelDef.badgeName)) {
+      prog.badges.push(levelDef.badgeName);
+    }
+  }
 
   all[username] = prog;
   saveAllStudentsProgress(all);
 
   addActivityLog(
-    `إتمام المستوى ${levelNumber} (${levelDef.shortTitle}) للطالب ${username} - النتيجة: ${scoreGained}/${maxScore} (${isImmediate ? 'تغذية فورية' : 'تغذية مرجئة'})`,
+    `حل مستوى حقيقي: الطالب ${username} أتم المستوى ${levelNumber} وحصل على ${scoreGained}/${maxScore} نقطة`,
     username,
-    'success'
+    scoreGained >= passThreshold ? 'success' : 'warning'
   );
 
   return {
@@ -140,9 +144,13 @@ export function submitLevelChallenge(
 
 export function resetStudentProgress(username: string): StudentGameProgress {
   const all = getAllStudentsProgress();
+  const avatarIndex =
+    Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) %
+    CARTOON_AVATARS.length;
+
   const resetProg: StudentGameProgress = {
     username,
-    avatarId: CARTOON_AVATARS[0].id,
+    avatarId: CARTOON_AVATARS[avatarIndex].id,
     currentLevel: 1,
     completedLevels: {},
     totalScore: 0,
@@ -156,9 +164,16 @@ export function resetStudentProgress(username: string): StudentGameProgress {
   return resetProg;
 }
 
-// Generates initial seed progress for other demo students across G1, G2, G3, G4
-function generateInitialGameSeeding(): Record<string, StudentGameProgress> {
-  const seeded: Record<string, StudentGameProgress> = {};
+export function resetAllStudentsToRealCleanState(): Record<string, StudentGameProgress> {
+  const clean = generateCleanRealStudents();
+  localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(clean));
+  addActivityLog('تم مسح البيانات الوهمية وتعيين البيانات الحقيقية النظيفة لكافة الطلاب', 'المشرف', 'warning');
+  return clean;
+}
+
+// Generates clean real initial state for all 60 students (0 mock data, 0 fake scores)
+function generateCleanRealStudents(): Record<string, StudentGameProgress> {
+  const clean: Record<string, StudentGameProgress> = {};
   const groups = ['G1', 'G2', 'G3', 'G4'] as const;
 
   groups.forEach((grp, grpIdx) => {
@@ -167,47 +182,18 @@ function generateInitialGameSeeding(): Record<string, StudentGameProgress> {
       const uname = `${grp}_Cp_${pad}`;
       const avatar = CARTOON_AVATARS[(i + grpIdx) % CARTOON_AVATARS.length];
 
-      // Give students sample progression between 1 and 4 levels completed
-      const completedCount = ((i * 3 + grpIdx) % 4); // 0 to 3 completed levels
-      const completedLevels: Record<number, CompletedLevelResult> = {};
-      let total = 0;
-      const isImmediate = grp === 'G1' || grp === 'G3';
-
-      for (let lvl = 1; lvl <= completedCount; lvl++) {
-        const lvlDef = GAME_LEVELS_DATA[lvl - 1];
-        const answers: Record<string, number> = {};
-        let score = 0;
-        lvlDef.questions.forEach((q, qIdx) => {
-          // Mostly correct
-          const isCorrect = (i + qIdx) % 4 !== 0;
-          answers[q.id] = isCorrect ? q.correctIndex : (q.correctIndex + 1) % q.options.length;
-          if (isCorrect) score += q.points;
-        });
-
-        total += score;
-        completedLevels[lvl] = {
-          levelNumber: lvl,
-          score,
-          maxScore: lvlDef.questions.length * 50,
-          answers,
-          completedAt: `2026-09-08 05:${10 + i}:${lvl * 12}`,
-          timeSpentSeconds: 45 + lvl * 15,
-          feedbackRevealedToStudent: isImmediate,
-        };
-      }
-
-      seeded[uname] = {
+      clean[uname] = {
         username: uname,
         avatarId: avatar.id,
-        currentLevel: Math.min(10, completedCount + 1),
-        completedLevels,
-        totalScore: total,
+        currentLevel: 1,
+        completedLevels: {},
+        totalScore: 0,
         hearts: 3,
-        badges: completedCount > 0 ? [GAME_LEVELS_DATA[0].badgeName] : [],
-        lastActive: completedCount > 0 ? `2026-09-08 05:${20 + i}:00` : 'لم يبدأ بعد',
+        badges: [],
+        lastActive: 'لم يسجل الدخول بعد',
       };
     }
   });
 
-  return seeded;
+  return clean;
 }

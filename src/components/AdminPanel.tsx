@@ -11,6 +11,7 @@ import {
 import {
   getAllStudentsProgress,
   resetStudentProgress,
+  resetAllStudentsToRealCleanState,
 } from '../utils/gameStorage';
 import { GAME_LEVELS_DATA, CARTOON_AVATARS } from '../data/gameLevelsData';
 import { getGroupByUsername, RESEARCH_GROUPS_META, getStudentPassword } from '../data/studentAccounts';
@@ -39,6 +40,7 @@ import {
   Gamepad2,
   Trophy,
   Award,
+  Crown,
   Sparkles,
   BarChart3,
   FileText,
@@ -56,6 +58,7 @@ import {
   Video,
 } from 'lucide-react';
 import { AdminVideoManager } from './AdminVideoManager';
+import { AdminSupervisorsHonorManager } from './AdminSupervisorsHonorManager';
 
 
 interface AdminPanelProps {
@@ -64,7 +67,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsStudent }) => {
-  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'videos' | 'security' | 'overview'>('game_analytics');
+  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'videos' | 'supervisors' | 'security' | 'overview'>('game_analytics');
   const [settings, setSettings] = useState<AdminSettings>(getAdminSettings());
   const [users, setUsers] = useState<PortalUser[]>(getPortalUsers());
   const [logs, setLogs] = useState<ActivityLog[]>(getActivityLogs());
@@ -311,7 +314,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           aria-label="تبويبات لوحة المشرف"
           className="px-4 sm:px-6 pt-3 pb-3 bg-[#0a0816] border-b border-[#d4af37]/30"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
             {/* 1. لوحة النتائج */}
             <button
               type="button"
@@ -375,7 +378,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               <span className="truncate">إدارة ورفع الفيديوهات</span>
             </button>
 
-            {/* 5. باسوورد الأدمن والأمان */}
+            {/* 5. إدارة لوحة الشرف */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('supervisors')}
+              id="tab-supervisors"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'supervisors'
+                  ? 'bg-gradient-to-r from-amber-400 via-[#ffd700] to-yellow-500 text-slate-950 border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.45)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-amber-400/40'
+              }`}
+            >
+              <Crown className={`w-4 h-4 shrink-0 ${activeTab === 'supervisors' ? 'text-slate-950' : 'text-amber-400'}`} />
+              <span className="truncate">إدارة لوحة الشرف</span>
+            </button>
+
+            {/* 6. باسوورد الأدمن والأمان */}
             <button
               type="button"
               onClick={() => setActiveTab('security')}
@@ -390,7 +408,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               <span className="truncate">باسوورد الأدمن والأمان</span>
             </button>
 
-            {/* 5. نظرة عامة وسجل العمليات */}
+            {/* 7. نظرة عامة وسجل العمليات */}
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
@@ -433,7 +451,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={refreshGameData}
@@ -441,6 +459,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>تحديث البيانات اللحظية</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('هل تريد مسح أي بيانات تجريبية سابقة والبدء على البيانات الحقيقية النظيفة لجميع الطلاب؟')) {
+                        const clean = resetAllStudentsToRealCleanState();
+                        setGameProgressMap(clean);
+                        alert('تم مسح البيانات الوهمية وتعيين البيانات الحقيقية للطلاب بنجاح.');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-950/50 hover:bg-red-900/60 border border-red-500/60 text-red-200 text-xs font-bold font-['Cairo'] flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <span>مسح البيانات الوهمية (بيانات حقيقية فقط)</span>
                   </button>
                 </div>
               </div>
@@ -1417,6 +1450,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           {/* TAB 2.5: EDUCATIONAL VIDEOS MANAGEMENT & TARGET LOCATIONS */}
           {activeTab === 'videos' && (
             <AdminVideoManager />
+          )}
+
+          {/* TAB 2.6: SUPERVISORS HONOR BOARD MANAGEMENT (إدارة لوحة الشرف) */}
+          {activeTab === 'supervisors' && (
+            <AdminSupervisorsHonorManager />
           )}
 
           {/* TAB 3: ADMIN PASSWORD & SECURITY */}

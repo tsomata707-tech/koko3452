@@ -95,10 +95,10 @@ export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt,
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white font-['Tajawal'] tracking-tight">
-              قواعد الرحلة ونظام اللعبة
+              قواعد ونظام بيئة الألعاب التعليمية
             </h1>
             <p className="text-sm text-slate-300 mt-1">
-              أهلاً بك مصمم المستقبل! هذه البيئة تعتمد على التعلم القائم على الألعاب (Gamification) لتمكينك من إتقان Adobe Captivate 2019.
+              أهلاً بك! هذه البيئة تعتمد على التعلم القائم على الألعاب (Gamification) لتنمية مهارات إنتاج وتصميم الوسائط المتعددة.
             </p>
           </div>
 

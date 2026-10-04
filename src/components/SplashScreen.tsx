@@ -41,20 +41,20 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onEnter, onOpenAdmin
         </div>
 
         {/* 2. Main Title */}
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-['Tajawal'] tracking-tight mb-2">
-          رحلة مصمم الوسائط المتعددة
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-['Tajawal'] tracking-tight mb-3 text-center max-w-3xl leading-snug">
+          بيئة ألعاب تعليمية إلكترونية لتنمية مهارات إنتاج وتصميم الوسائط المتعددة
         </h1>
 
         {/* 3. Subtitle / Goal Text */}
-        <p className="text-sm sm:text-base text-blue-100/90 max-w-xl leading-relaxed mb-6 font-medium">
-          انطلق في رحلتك لإتقان <span className="text-[#ffd700] font-bold">Adobe Captivate 2019</span> وتصميم تجارب تعليمية تفاعلية شيقة وفق أرقى معايير التصميم التعليمي.
+        <p className="text-sm sm:text-base text-blue-100/90 max-w-xl leading-relaxed mb-6 font-medium text-center">
+          بيئة تفاعلية قائمة على التنافس والتعاون وأنماط التغذية الراجعة لإتقان برمجيات التصميم التعليمي
         </p>
 
         {/* 4. Student Illustration with Tablet */}
         <div className="relative w-full max-w-xs sm:max-w-sm rounded-2xl overflow-hidden border-2 border-blue-400/40 shadow-[0_15px_35px_rgba(0,0,0,0.6)] mb-8 bg-[#090d1a] group">
           <img
             src={studentJourneyImg}
-            alt="رحلة مصمم الوسائط المتعددة - طالب جامعي"
+            alt="بيئة ألعاب تعليمية إلكترونية لتنمية مهارات إنتاج وتصميم الوسائط المتعددة"
             className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f1e] via-transparent to-transparent opacity-70 pointer-events-none" />

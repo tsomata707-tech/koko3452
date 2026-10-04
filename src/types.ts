@@ -138,3 +138,25 @@ export interface EducationalVideo {
   isActive: boolean;
 }
 
+export interface SupervisorCard {
+  id: string;
+  cardIndex: number; // 1, 2, 3...
+  cardLabel: string; // "البطاقة 1", "البطاقة 2"...
+  name: string;
+  title: string;
+  role: string;
+  imageUrl: string; // jpg file or URL
+  accentColor?: string;
+}
+
+export interface SupervisorsHonorBoardConfig {
+  boardTitle: string; // Golden main title
+  boardSubtitle: string;
+  university: string;
+  researcher?: string;
+  researchTitle?: string;
+  showOnStudentLogin?: boolean;
+  supervisors: SupervisorCard[];
+  updatedAt: string;
+}
+

@@ -8,17 +8,35 @@ import { AdminPanel } from './components/AdminPanel';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { KeyRound } from 'lucide-react';
 
+const SESSION_KEY = 'cp_active_session_username_v1';
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(SESSION_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
   const [authScreen, setAuthScreen] = useState<'splash' | 'login'>('splash');
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
 
   const handleLoginSuccess = (username: string) => {
+    try {
+      localStorage.setItem(SESSION_KEY, username);
+    } catch {
+      // Ignore
+    }
     setCurrentUser(username);
   };
 
   const handleLogout = () => {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Ignore
+    }
     setCurrentUser(null);
     setAuthScreen('splash');
   };
@@ -91,7 +109,7 @@ export default function App() {
       <footer className="relative z-10 py-4 text-center text-[11px] text-slate-500 border-t border-slate-900/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span>منظومة رحلة مصمم الوسائط المتعددة &copy; {new Date().getFullYear()} - جميع الحقوق محفوظة</span>
+            <span>بيئة ألعاب تعليمية إلكترونية لتنمية مهارات إنتاج وتصميم الوسائط المتعددة &copy; {new Date().getFullYear()} - جميع الحقوق محفوظة</span>
           </div>
 
           <div className="flex items-center gap-4">

@@ -16,12 +16,15 @@ import { ApplicationTaskModal } from './ApplicationTaskModal';
 import { PointsCelebrationModal } from './PointsCelebrationModal';
 import { ProgressBoardView } from './ProgressBoardView';
 import { DesignChallengeView } from './DesignChallengeView';
+import { SupervisorsHonorBoard } from './SupervisorsHonorBoard';
+import { getSupervisorsBoardConfig } from '../utils/supervisorsStorage';
 import { getGroupByUsername } from '../data/studentAccounts';
 import { getStudentProgress, getAllStudentsProgress, saveAllStudentsProgress } from '../utils/gameStorage';
 import { GAME_LEVELS_DATA } from '../data/gameLevelsData';
 import {
   GraduationCap,
   Trophy,
+  Crown,
   Users,
   BookOpen,
   LogOut,
@@ -67,6 +70,11 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
 
   // Student Game Progress
   const [studentGame, setStudentGame] = useState(() => getStudentProgress(username));
+
+  // Auto-display supervisors honor board after student login
+  const [showSupervisorModal, setShowSupervisorModal] = useState<boolean>(() => {
+    return getSupervisorsBoardConfig().showOnStudentLogin !== false;
+  });
 
   // Modals for Task and Celebration
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -183,7 +191,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
                 )}
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] mt-1">
-                رحلة مصمم الوسائط المتعددة: مرحباً بك، <span className="text-[#ffd700] font-mono">{username}</span>
+                بيئة الألعاب التعليمية الإلكترونية: مرحباً بك، <span className="text-[#ffd700] font-mono">{username}</span>
               </h1>
               <p className="text-xs text-slate-300 mt-1 font-['Cairo']">
                 جامعة طنطا - كلية التربية النوعية • قسم تكنولوجيا التعليم
@@ -192,24 +200,24 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           </div>
 
           {/* Quick Metrics Cards */}
-          <div className="flex items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
-            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-blue-500/30 text-right">
-              <span className="text-[10px] text-slate-400 block font-['Cairo']">رصيد النقاط</span>
-              <span className="text-lg font-black text-amber-300 font-['Outfit']">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto">
+            <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#080d1e] border border-blue-500/30 text-center sm:text-right">
+              <span className="text-[10px] text-slate-400 block font-['Cairo']">النقاط الفعلية</span>
+              <span className="text-base sm:text-lg font-black text-amber-300 font-['Outfit']">
                 {studentGame.totalScore} ⭐
               </span>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-purple-500/30 text-right">
+            <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#080d1e] border border-purple-500/30 text-center sm:text-right">
               <span className="text-[10px] text-slate-400 block font-['Cairo']">المرحلة الحالية</span>
-              <span className="text-lg font-black text-purple-300 font-['Outfit']">
+              <span className="text-base sm:text-lg font-black text-purple-300 font-['Outfit']">
                 L{studentGame.currentLevel} / 10
               </span>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-[#080d1e] border border-emerald-500/30 text-right">
-              <span className="text-[10px] text-slate-400 block font-['Cairo']">الأوسمة المكتسبة</span>
-              <span className="text-lg font-black text-emerald-300 font-['Outfit']">
+            <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#080d1e] border border-emerald-500/30 text-center sm:text-right">
+              <span className="text-[10px] text-slate-400 block font-['Cairo']">الأوسمة الفعلية</span>
+              <span className="text-base sm:text-lg font-black text-emerald-300 font-['Outfit']">
                 {studentGame.badges.length} 🏅
               </span>
             </div>
@@ -217,8 +225,19 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
         </div>
 
         {/* Master Storyboard Navigation Bar: All key screens accessible in 1 click */}
-        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#070a16] border border-blue-500/30 shadow-inner w-full overflow-x-auto">
+        <div className="pt-5 sm:pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#070a16] border border-blue-500/30 shadow-inner w-full overflow-x-auto touch-pan-x scrollbar-thin">
+            {/* 0. لوحة شرف المشرفين (لجنة الإشراف الأكاديمي) */}
+            <button
+              type="button"
+              id="tab-supervisors-modal"
+              onClick={() => setShowSupervisorModal(true)}
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 hover:from-amber-500/35 hover:to-yellow-500/35 text-[#ffd700] border-2 border-[#ffd700]/70 shadow-[0_0_15px_rgba(255,215,0,0.3)] shrink-0"
+            >
+              <Crown className="w-4 h-4 text-[#ffd700]" />
+              <span>🎓 لوحة شرف المشرفين</span>
+            </button>
+
             {/* 1. خريطة التعلم */}
             <button
               type="button"
@@ -534,6 +553,16 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           isCollaborative={isCollaborative}
           message={celebrationData.message}
           onContinue={() => setCelebrationData(null)}
+        />
+      )}
+
+      {/* لوحة الشرف الخاصة بمشرفي المشروع والرسالة (عرض تلقائي بعد تسجيل دخول الطالب) */}
+      {showSupervisorModal && (
+        <SupervisorsHonorBoard
+          isModal={true}
+          onClose={() => setShowSupervisorModal(false)}
+          onContinue={() => setShowSupervisorModal(false)}
+          showContinueButton={true}
         />
       )}
 
