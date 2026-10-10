@@ -79,9 +79,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-['Tajawal'] tracking-tight">
                 أهلاً بك، <span className="text-[#ffd700]">{studentInfo?.fullName || username}</span>!
               </h1>
-              <p className="text-sm sm:text-base text-slate-300 mt-1 font-medium">
-                لقد قطعت شوطاً رائعاً في بيئة الألعاب التعليمية لتنمية مهارات إنتاج وتصميم الوسائط المتعددة.
-              </p>
             </div>
           </div>
 
