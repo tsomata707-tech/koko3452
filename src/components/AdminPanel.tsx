@@ -655,6 +655,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                       <th className="p-3.5">المجموعة التجريبية</th>
                       <th className="p-3.5">نمط التغذية</th>
                       <th className="p-3.5 text-center">الاختبار القبلي</th>
+                      <th className="p-3.5 text-center">الاختبار البعدي</th>
                       <th className="p-3.5 text-center">المستوى الحالي</th>
                       <th className="p-3.5 text-center">المستويات المكتملة</th>
                       <th className="p-3.5 text-center">النقاط (XP)</th>
@@ -743,6 +744,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                                 <span className="px-2 py-0.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold font-mono text-[10px] inline-flex items-center gap-1 shadow-sm">
                                   <Check className="w-3 h-3 text-emerald-400" />
                                   <span>{prog.preTestResult.score}/{prog.preTestResult.maxScore} XP</span>
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[10px]">
+                                  لم يؤدَ بعد
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Post-Test Result */}
+                            <td className="p-3.5 text-center font-['Cairo']">
+                              {prog.postTestResult?.completed ? (
+                                <span className="px-2 py-0.5 rounded-lg bg-purple-950/80 border border-purple-500/50 text-purple-300 font-bold font-mono text-[10px] inline-flex items-center gap-1 shadow-sm">
+                                  <Trophy className="w-3 h-3 text-purple-400" />
+                                  <span>{prog.postTestResult.score}/{prog.postTestResult.maxScore} XP</span>
                                 </span>
                               ) : (
                                 <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[10px]">

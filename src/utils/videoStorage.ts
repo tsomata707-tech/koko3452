@@ -1,12 +1,13 @@
+import { useState, useEffect } from 'react';
 import { EducationalVideo, VideoSlotDef } from '../types';
 import { storeVideoBlob, getVideoBlobUrl, deleteVideoBlob } from './indexedDbVideo';
 
 export const VIDEO_SLOTS: VideoSlotDef[] = [
   {
     slotId: 'level-1',
-    name: 'المرحلة 1: مفهوم الوسائط المتعددة والتعليم الإلكتروني',
+    name: 'المستوى 1: أساسيات الوسائط وتثبيت Adobe Captivate 2019',
     levelNumber: 1,
-    description: 'يظهر في شاشة المحتوى التعليمي للمرحلة الأولى لشرح المفاهيم الأساسية للوسائط.',
+    description: 'فيديو المرحلة: مقدمة في إنتاج وتصميم الوسائط المتعددة - يظهر في خريطة التعلم واللعبة والمحتوى.',
     recommendedDuration: '04:30',
   },
   {
@@ -95,7 +96,7 @@ const INITIAL_VIDEOS: EducationalVideo[] = [
     id: 'vid-1',
     title: 'مقدمة في إنتاج وتصميم الوسائط المتعددة',
     targetSlotId: 'level-1',
-    targetSlotName: 'المرحلة 1: مفهوم الوسائط المتعددة والتعليم الإلكتروني',
+    targetSlotName: 'المستوى 1: أساسيات الوسائط وتثبيت Adobe Captivate 2019',
     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     videoType: 'youtube',
     duration: '04:30',
@@ -183,6 +184,51 @@ export function saveEducationalVideos(videos: EducationalVideo[]): void {
 export function getVideoBySlot(slotId: string): EducationalVideo | undefined {
   const all = getEducationalVideos();
   return all.find((v) => v.targetSlotId === slotId && v.isActive);
+}
+
+/**
+ * React hook to access and automatically rehydrate a slot video with live IndexedDB support
+ */
+export function useEducationalVideo(slotId: string): EducationalVideo | undefined {
+  const [video, setVideo] = useState<EducationalVideo | undefined>(() => getVideoBySlot(slotId));
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const resolveCurrent = async () => {
+      const current = getVideoBySlot(slotId);
+      if (!current) {
+        if (isMounted) setVideo(undefined);
+        return;
+      }
+
+      if (current.videoType === 'file' && current.blobId) {
+        const freshUrl = await getVideoBlobUrl(current.blobId);
+        if (freshUrl && isMounted) {
+          setVideo({ ...current, videoUrl: freshUrl });
+          return;
+        }
+      }
+
+      if (isMounted) {
+        setVideo(current);
+      }
+    };
+
+    resolveCurrent();
+
+    const handleUpdate = () => {
+      resolveCurrent();
+    };
+
+    window.addEventListener('videos-storage-updated', handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('videos-storage-updated', handleUpdate);
+    };
+  }, [slotId]);
+
+  return video;
 }
 
 /**

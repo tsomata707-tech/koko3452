@@ -30,12 +30,16 @@ import {
   getPreTestQuestions,
   savePreTestQuestions,
   resetPreTestQuestionsToDefault,
+  getPostTestQuestions,
+  savePostTestQuestions,
 } from '../data/preTestData';
 import { PreTestQuestion } from '../types';
 
 export const AdminInstructionsManager: React.FC = () => {
   const [config, setConfig] = useState<SiteInstructionsConfig>(() => getSiteInstructionsConfig());
   const [preTestQuestions, setPreTestQuestions] = useState<PreTestQuestion[]>(() => getPreTestQuestions());
+  const [postTestQuestions, setPostTestQuestions] = useState<PreTestQuestion[]>(() => getPostTestQuestions());
+  const [selectedBankType, setSelectedBankType] = useState<'pre' | 'post'>('pre');
   const [activeSubTab, setActiveSubTab] = useState<'instructions_cards' | 'pretest_questions'>('instructions_cards');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [activeEditingCardId, setActiveEditingCardId] = useState<string>('pretest');
@@ -47,7 +51,8 @@ export const AdminInstructionsManager: React.FC = () => {
   const handleSaveConfig = () => {
     saveSiteInstructionsConfig(config);
     savePreTestQuestions(preTestQuestions);
-    setSaveSuccessMsg('تم حفظ إرشادات ومعايير الموقع بنجاح! تم تحديث ما يراه الطلاب فورياً.');
+    savePostTestQuestions(postTestQuestions);
+    setSaveSuccessMsg('تم حفظ إرشادات ومعايير الموقع وبنوك الأسئلة (القبلي والبعدي) بنجاح!');
     setTimeout(() => setSaveSuccessMsg(null), 4000);
   };
 
@@ -57,6 +62,7 @@ export const AdminInstructionsManager: React.FC = () => {
       const defQ = resetPreTestQuestionsToDefault();
       setConfig(def);
       setPreTestQuestions(defQ);
+      setPostTestQuestions(defQ);
       setSaveSuccessMsg('تمت استعادة المعايير الافتراضية بنجاح.');
       setTimeout(() => setSaveSuccessMsg(null), 3000);
     }
@@ -88,15 +94,18 @@ export const AdminInstructionsManager: React.FC = () => {
     updateActiveCardField('bullets', updated);
   };
 
-  // Pre-test questions handlers
+  // Questions bank handlers (Pre & Post)
+  const activeQuestionsList = selectedBankType === 'pre' ? preTestQuestions : postTestQuestions;
+  const setActiveQuestionsList = selectedBankType === 'pre' ? setPreTestQuestions : setPostTestQuestions;
+
   const handleUpdateQuestion = (qId: string, field: keyof PreTestQuestion, val: any) => {
-    setPreTestQuestions((prev) =>
+    setActiveQuestionsList((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, [field]: val } : q))
     );
   };
 
   const handleUpdateQuestionOption = (qId: string, optIdx: number, val: string) => {
-    setPreTestQuestions((prev) =>
+    setActiveQuestionsList((prev) =>
       prev.map((q) => {
         if (q.id !== qId) return q;
         const opts = [...q.options];
@@ -403,25 +412,50 @@ export const AdminInstructionsManager: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: PRE-TEST QUESTIONS BANK */}
+      {/* TAB 2: QUESTIONS BANK (PRE & POST) */}
       {activeSubTab === 'pretest_questions' && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0e1224] border border-blue-500/40">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#0e1224] border border-blue-500/40">
             <div>
               <h4 className="text-sm font-black text-white font-['Tajawal']">
-                أسئلة لعبة الاختبار القبلي التفاعلية
+                {selectedBankType === 'pre'
+                  ? 'أسئلة لعبة الاختبار القبلي التفاعلية (المستوى التمهيدي)'
+                  : 'أسئلة لعبة الاختبار البعدي التفاعلية (المحطة الختامية)'}
               </h4>
               <p className="text-xs text-slate-300 mt-0.5">
-                يمكنك مراجعة وتعديل الأسئلة والخيارات والإجابة الصحيحة والتفسير لكل سؤال.
+                يمكنك مراجعة وتعديل الأسئلة والخيارات والإجابة الصحيحة والتفسير بدقة وفق المعايير البحثية.
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-blue-950 text-blue-300 text-xs font-bold border border-blue-500/50">
-              {preTestQuestions.length} أسئلة معتمدة
-            </span>
+
+            {/* Switcher Between Pre-Test and Post-Test Banks */}
+            <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedBankType('pre')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                  selectedBankType === 'pre'
+                    ? 'bg-amber-500 text-slate-950 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                الاختبار القبلي ({preTestQuestions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedBankType('post')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                  selectedBankType === 'post'
+                    ? 'bg-purple-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                الاختبار البعدي ({postTestQuestions.length})
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
-            {preTestQuestions.map((q, qIndex) => (
+            {activeQuestionsList.map((q, qIndex) => (
               <div
                 key={q.id}
                 className="p-5 rounded-2xl bg-[#0b0e1e] border-2 border-slate-800 hover:border-blue-500/50 transition-all space-y-4"

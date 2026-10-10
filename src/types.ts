@@ -85,6 +85,7 @@ export interface StudentGameProgress {
   currentLevel: number; // 1 to 10
   completedLevels: Record<number, CompletedLevelResult>;
   preTestResult?: PreTestResult;
+  postTestResult?: PreTestResult;
   totalScore: number;
   hearts: number;
   badges: string[];

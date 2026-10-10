@@ -21,14 +21,49 @@ import {
 } from 'lucide-react';
 import { GameLevelDef, GAME_LEVELS_DATA } from '../data/gameLevelsData';
 import { getStudentProgress } from '../utils/gameStorage';
-import { getVideoBySlot } from '../utils/videoStorage';
+import { useEducationalVideo } from '../utils/videoStorage';
 import { Gamepad2 } from 'lucide-react';
+
+const StageIntroVideoPlayer: React.FC<{ levelNumber: number }> = ({ levelNumber }) => {
+  const video = useEducationalVideo(`level-${levelNumber}`);
+  if (!video) return null;
+
+  return (
+    <div className="p-3.5 rounded-2xl bg-[#070914] border border-blue-500/40 mb-4 text-right">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 text-xs font-bold text-blue-300">
+          <Video className="w-4 h-4 text-blue-400" />
+          <span>فيديو المرحلة: {video.title}</span>
+        </div>
+        {video.duration && (
+          <span className="text-[11px] font-mono text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+            {video.duration}
+          </span>
+        )}
+      </div>
+      <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-800 shadow-md">
+        {video.videoType === 'youtube' || video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
+          <iframe
+            src={video.videoUrl}
+            title={video.title}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video src={video.videoUrl} controls preload="metadata" className="w-full h-full object-contain" />
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface LearningMapScreenProps {
   username: string;
   onSelectStageForContent: (levelNum: number) => void;
   onSelectStageForActivity: (levelNum: number) => void;
   onSelectPreTest?: () => void;
+  onSelectPostTest?: () => void;
 }
 
 export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
@@ -36,6 +71,7 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
   onSelectStageForContent,
   onSelectStageForActivity,
   onSelectPreTest,
+  onSelectPostTest,
 }) => {
   const progress = getStudentProgress(username);
   const [selectedIntroLevel, setSelectedIntroLevel] = useState<GameLevelDef | null>(null);
@@ -266,6 +302,66 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
           </div>
         </div>
 
+        {/* POST-TEST (المحطة الختامية: الاختبار البعدي) CARD */}
+        {onSelectPostTest && (
+          <div className="mt-4 mb-2">
+            {!progress.postTestResult?.completed ? (
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/80 via-indigo-950/80 to-slate-900 border-2 border-purple-500/60 shadow-[0_0_25px_rgba(168,85,247,0.3)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 text-right">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-900/50 shrink-0">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                        المحطة الختامية
+                      </span>
+                      <h3 className="text-sm sm:text-base font-black text-white font-['Tajawal']">
+                        🏁 لعبة توصيل الإجابات بالسيارة: الاختبار البعدي
+                      </h3>
+                    </div>
+                    <p className="text-xs text-purple-200/90 mt-0.5">
+                      قُد سيارة السباق لتوصيل الأسئلة بالإجابات وقياس مكاسب التعلم بعد إتمام المراحل!
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onSelectPostTest}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-black text-xs transition shadow-lg shadow-purple-900/40 shrink-0 flex items-center justify-center gap-2"
+                >
+                  <Gamepad2 className="w-4 h-4" />
+                  <span>بدء الاختبار البعدي 🏁</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-emerald-300 block">
+                      المحطة الختامية (مكتملة بنجاح 🏆)
+                    </span>
+                    <span className="text-[11px] text-slate-300">
+                      نتيجة الاختبار البعدي: {progress.postTestResult.score} / {progress.postTestResult.maxScore} نقطة
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onSelectPostTest}
+                  className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline"
+                >
+                  إعادة خوض سباق التوصيل 🏎️
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Legend / Key */}
         <div className="flex flex-wrap items-center justify-center gap-6 p-4 rounded-2xl bg-[#070914] border border-slate-800 text-xs text-slate-300">
           <div className="flex items-center gap-2">
@@ -312,31 +408,7 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
             </div>
 
             {/* Video preview in Stage Intro if available */}
-            {(() => {
-              const video = getVideoBySlot(`level-${selectedIntroLevel.levelNumber}`);
-              if (!video) return null;
-              return (
-                <div className="p-3.5 rounded-2xl bg-[#070914] border border-blue-500/40 mb-4">
-                  <div className="flex items-center gap-2 mb-2 text-xs font-bold text-blue-300">
-                    <Video className="w-4 h-4 text-blue-400" />
-                    <span>فيديو المرحلة: {video.title}</span>
-                  </div>
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-800">
-                    {video.videoType === 'youtube' || video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
-                      <iframe
-                        src={video.videoUrl}
-                        title={video.title}
-                        className="w-full h-full border-0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video src={video.videoUrl} controls className="w-full h-full object-contain" />
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+            <StageIntroVideoPlayer levelNumber={selectedIntroLevel.levelNumber} />
 
             {/* Stage Objectives */}
             <div className="p-4 rounded-2xl bg-[#080b18] border border-blue-500/30 mb-4">

@@ -5,6 +5,9 @@ const DB_NAME = 'cp_educational_videos_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'video_blobs';
 
+// In-memory fallback cache for instant retrieval and incognito resilience
+const memoryBlobMap = new Map<string, Blob>();
+
 function openVideoDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || !window.indexedDB) {
@@ -27,35 +30,47 @@ function openVideoDb(): Promise<IDBDatabase> {
 }
 
 /**
- * Stores a video file/blob in IndexedDB
+ * Stores a video file/blob in IndexedDB (with memory cache fallback)
  */
 export async function storeVideoBlob(id: string, file: Blob, fileName: string): Promise<string> {
-  const db = await openVideoDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
+  memoryBlobMap.set(id, file);
+  const objectUrl = URL.createObjectURL(file);
 
-    const record = {
-      id,
-      blob: file,
-      fileName,
-      mimeType: file.type || 'video/mp4',
-      updatedAt: Date.now(),
-    };
+  try {
+    const db = await openVideoDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
 
-    const req = store.put(record);
-    req.onsuccess = () => {
-      const objectUrl = URL.createObjectURL(file);
-      resolve(objectUrl);
-    };
-    req.onerror = () => reject(req.error);
-  });
+      const record = {
+        id,
+        blob: file,
+        fileName,
+        mimeType: file.type || 'video/mp4',
+        updatedAt: Date.now(),
+      };
+
+      const req = store.put(record);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    // In-memory cache is already populated
+  }
+
+  return objectUrl;
 }
 
 /**
  * Retrieves a video blob from IndexedDB and returns a fresh Object URL
  */
 export async function getVideoBlobUrl(id: string): Promise<string | null> {
+  // First check memory map for instant hit
+  const cached = memoryBlobMap.get(id);
+  if (cached) {
+    return URL.createObjectURL(cached);
+  }
+
   try {
     const db = await openVideoDb();
     return new Promise((resolve) => {
@@ -66,6 +81,7 @@ export async function getVideoBlobUrl(id: string): Promise<string | null> {
       req.onsuccess = () => {
         const result = req.result;
         if (result && result.blob) {
+          memoryBlobMap.set(id, result.blob);
           const url = URL.createObjectURL(result.blob);
           resolve(url);
         } else {

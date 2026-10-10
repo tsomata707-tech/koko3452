@@ -199,3 +199,90 @@ export function submitPreTestResult(
 
   return { progress: prog, result };
 }
+
+const POSTTEST_QUESTIONS_KEY = 'cp_posttest_questions_bank_v1';
+
+export function getPostTestQuestions(): PreTestQuestion[] {
+  try {
+    const raw = localStorage.getItem(POSTTEST_QUESTIONS_KEY);
+    if (!raw) {
+      savePostTestQuestions(DEFAULT_PRETEST_QUESTIONS);
+      return DEFAULT_PRETEST_QUESTIONS;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return DEFAULT_PRETEST_QUESTIONS;
+    }
+    return parsed;
+  } catch {
+    return DEFAULT_PRETEST_QUESTIONS;
+  }
+}
+
+export function savePostTestQuestions(questions: PreTestQuestion[]): void {
+  localStorage.setItem(POSTTEST_QUESTIONS_KEY, JSON.stringify(questions));
+}
+
+export function submitPostTestResult(
+  username: string,
+  chosenAnswers: Record<string, number>,
+  timeSpentSeconds: number
+): {
+  progress: StudentGameProgress;
+  result: PreTestResult;
+} {
+  const all = getAllStudentsProgress();
+  const prog = all[username] || {
+    username,
+    avatarId: 'avatar-cpbot',
+    currentLevel: 1,
+    completedLevels: {},
+    totalScore: 0,
+    hearts: 3,
+    badges: [],
+    lastActive: new Date().toISOString(),
+  };
+
+  const questions = getPostTestQuestions();
+  let score = 0;
+  let maxScore = 0;
+
+  questions.forEach((q) => {
+    maxScore += q.points;
+    if (chosenAnswers[q.id] === q.correctIndex) {
+      score += q.points;
+    }
+  });
+
+  const passed = score >= Math.floor(maxScore * 0.5);
+
+  const result: PreTestResult = {
+    completed: true,
+    score,
+    maxScore,
+    answers: chosenAnswers,
+    completedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    timeSpentSeconds,
+    passed,
+  };
+
+  prog.postTestResult = result;
+  prog.totalScore += score;
+  const badgeName = 'وسام الإتقان والختام (الاختبار البعدي)';
+  if (!prog.badges.includes(badgeName)) {
+    prog.badges.push(badgeName);
+  }
+  prog.lastActive = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+  all[username] = prog;
+  saveAllStudentsProgress(all);
+
+  addActivityLog(
+    `إتمام الاختبار البعدي: أنهى الطالب ${username} لعبة الاختبار البعدي وحصد ${score}/${maxScore} نقطة`,
+    username,
+    'success'
+  );
+
+  return { progress: prog, result };
+}
+

@@ -19,7 +19,7 @@ import {
   Info,
   Video,
 } from 'lucide-react';
-import { getVideoBySlot } from '../utils/videoStorage';
+import { useEducationalVideo } from '../utils/videoStorage';
 
 interface ModuleDetailsViewProps {
   module: CurriculumModule;
@@ -41,7 +41,7 @@ export const ModuleDetailsView: React.FC<ModuleDetailsViewProps> = ({
   onToggleObjective,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'objectives' | 'video' | 'simulator' | 'research'>('objectives');
-  const moduleVideo = getVideoBySlot(`level-${module.number}`);
+  const moduleVideo = useEducationalVideo(`level-${module.number}`);
 
   // Compute completion rate
   const total = module.objectives.length;

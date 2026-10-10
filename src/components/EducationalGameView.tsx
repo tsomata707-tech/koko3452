@@ -22,6 +22,8 @@ import {
   Radio,
   Wifi,
   Volume2,
+  Video,
+  Play,
 } from 'lucide-react';
 import { CARTOON_AVATARS, GAME_LEVELS_DATA, GameLevelDef } from '../data/gameLevelsData';
 import {
@@ -29,6 +31,7 @@ import {
   submitLevelChallenge,
   updateStudentAvatar,
 } from '../utils/gameStorage';
+import { useEducationalVideo } from '../utils/videoStorage';
 import { getGroupByUsername, getStudentByUsername } from '../data/studentAccounts';
 import {
   StudentGameProgress,
@@ -58,6 +61,8 @@ export const EducationalGameView: React.FC<EducationalGameViewProps> = ({ userna
   const [chosenAnswers, setChosenAnswers] = useState<Record<string, number>>({});
   const [showAvatarModal, setShowAvatarModal] = useState<boolean>(false);
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [isVideoOpen, setIsVideoOpen] = useState<boolean>(true);
+  const currentLevelVideo = useEducationalVideo(`level-${selectedLevelNum}`);
   const [feedbackModal, setFeedbackModal] = useState<{
     result: CompletedLevelResult;
     isImmediate: boolean;
@@ -413,6 +418,73 @@ export const EducationalGameView: React.FC<EducationalGameViewProps> = ({ userna
             </div>
           </div>
         </div>
+
+        {/* 🌟 STAGE VIDEO CARD (فيديو المرحلة: مقدمة في إنتاج وتصميم الوسائط المتعددة) */}
+        {currentLevelVideo && (
+          <div className="my-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#0e122b] via-[#12163b] to-[#0e122b] border-2 border-blue-500/60 shadow-[0_0_25px_rgba(37,99,235,0.25)] space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-400 text-blue-300 flex items-center justify-center shrink-0 shadow-sm">
+                  <Video className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold text-[10px] font-['Cairo']">
+                      فيديو المرحلة {selectedLevelNum} المطلوب
+                    </span>
+                    {currentLevelVideo.videoType === 'file' && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 text-[10px] font-bold">
+                        فيديو مرفوع من المشرف 🟢
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black text-white font-['Tajawal'] mt-0.5">
+                    {currentLevelVideo.title}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {currentLevelVideo.duration && (
+                  <span className="text-xs font-mono text-amber-300 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-700">
+                    المدة: {currentLevelVideo.duration}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsVideoOpen(!isVideoOpen)}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>{isVideoOpen ? 'إخفاء الفيديو' : 'مشاهدة فيديو المرحلة'}</span>
+                </button>
+              </div>
+            </div>
+
+            {isVideoOpen && (
+              <div className="relative aspect-video max-h-96 rounded-2xl overflow-hidden bg-black border-2 border-blue-500/40 shadow-2xl mx-auto animate-fadeIn">
+                {currentLevelVideo.videoType === 'youtube' ||
+                currentLevelVideo.videoUrl.includes('youtube.com') ||
+                currentLevelVideo.videoUrl.includes('youtu.be') ? (
+                  <iframe
+                    src={currentLevelVideo.videoUrl}
+                    title={currentLevelVideo.title}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={currentLevelVideo.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full h-full object-contain"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2.5 REAL-TIME COLLABORATIVE LIVE BAR (FIREBASE SYNC) */}
         <div className="my-6 p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900 to-indigo-950/60 border border-purple-500/40 shadow-lg space-y-3">

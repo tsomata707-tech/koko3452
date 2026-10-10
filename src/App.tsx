@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { RobotBackground } from './components/RobotBackground';
 import { SplashScreen } from './components/SplashScreen';
@@ -7,6 +7,7 @@ import { PortalHome } from './components/PortalHome';
 import { AdminPanel } from './components/AdminPanel';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { KeyRound } from 'lucide-react';
+import { rehydrateLocalVideoUrls } from './utils/videoStorage';
 
 const SESSION_KEY = 'cp_active_session_username_v1';
 
@@ -21,6 +22,11 @@ export default function App() {
   const [authScreen, setAuthScreen] = useState<'splash' | 'login'>('splash');
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+
+  // Automatically rehydrate any uploaded videos from IndexedDB on startup
+  useEffect(() => {
+    rehydrateLocalVideoUrls().catch(() => {});
+  }, []);
 
   const handleLoginSuccess = (username: string) => {
     try {

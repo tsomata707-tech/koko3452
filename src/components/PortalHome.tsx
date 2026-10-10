@@ -52,6 +52,7 @@ export type PortalSection =
   | 'welcome'
   | 'instructions'
   | 'pretest'
+  | 'posttest'
   | 'profile'
   | 'game'
   | 'task'
@@ -274,6 +275,25 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               </span>
             </button>
 
+            {/* المحطة الختامية: لعبة الاختبار البعدي */}
+            <button
+              type="button"
+              id="tab-posttest"
+              onClick={() => setActiveMainSection('posttest')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'posttest'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.45)]'
+                  : studentGame.postTestResult?.completed
+                  ? 'text-emerald-300 hover:text-white hover:bg-slate-900 border border-emerald-500/30'
+                  : 'text-purple-300 hover:text-white hover:bg-slate-900 border border-purple-500/30'
+              }`}
+            >
+              <Trophy className="w-4 h-4 text-purple-400" />
+              <span>
+                {studentGame.postTestResult?.completed ? '🏆 الاختبار البعدي (مكتمل)' : '🏁 الاختبار البعدي'}
+              </span>
+            </button>
+
             {/* 2. النشاط والتقييم */}
             <button
               type="button"
@@ -456,6 +476,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           onSelectStageForContent={() => setActiveMainSection('levels')}
           onSelectStageForActivity={() => setActiveMainSection('game')}
           onSelectPreTest={() => setActiveMainSection('pretest')}
+          onSelectPostTest={() => setActiveMainSection('posttest')}
         />
       )}
 
@@ -487,11 +508,25 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
       {activeMainSection === 'pretest' && (
         <PreTestGameView
           username={username}
+          mode="pre"
           onFinishPreTest={() => {
             refreshProgress();
             setActiveMainSection('map');
           }}
           onBackToInstructions={() => setActiveMainSection('instructions')}
+        />
+      )}
+
+      {/* المحطة الختامية: لعبة الاختبار البعدي (Screen Post-Test) */}
+      {activeMainSection === 'posttest' && (
+        <PreTestGameView
+          username={username}
+          mode="post"
+          onFinishPreTest={() => {
+            refreshProgress();
+            setActiveMainSection('map');
+          }}
+          onBackToInstructions={() => setActiveMainSection('map')}
         />
       )}
 
