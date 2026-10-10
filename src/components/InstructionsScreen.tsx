@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Star, Award, TrendingUp, CheckCircle, ArrowLeft, BookOpen, Sparkles, Shield, HelpCircle } from 'lucide-react';
+import { Target, Star, Award, TrendingUp, CheckCircle, ArrowLeft, BookOpen, Sparkles, Shield, HelpCircle, Compass } from 'lucide-react';
 
 interface InstructionsScreenProps {
   onGotIt: () => void;
@@ -189,15 +189,16 @@ export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt,
           ))}
         </div>
 
-        {/* Bottom Action Button: فهمت، لنبدأ! */}
+        {/* Bottom Action Button: ابدأ التعلم الآن */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 border-t border-slate-800">
           <button
             type="button"
-            id="btn-instructions-got-it"
+            id="btn-instructions-start-learning"
             onClick={onGotIt}
             className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg shadow-[0_0_30px_rgba(16,185,129,0.4)] border-2 border-emerald-400/60 hover:border-emerald-300 transition-all cursor-pointer flex items-center justify-center gap-3 transform hover:-translate-y-0.5"
           >
-            <span>فهمت، لنبدأ!</span>
+            <Compass className="w-5 h-5 text-amber-300" />
+            <span>ابدأ التعلم الآن</span>
             <ArrowLeft className="w-5 h-5" />
           </button>
 

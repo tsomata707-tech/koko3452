@@ -182,30 +182,21 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-          {/* Main Action: Start / Continue Learning */}
-          <button
-            type="button"
-            id="btn-welcome-start-learning"
-            onClick={onStartLearning}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-base sm:text-lg shadow-[0_0_30px_rgba(37,99,235,0.45)] border-2 border-blue-400/50 hover:border-blue-300 transition-all cursor-pointer flex items-center justify-center gap-3 transform hover:-translate-y-0.5"
-          >
-            <Compass className="w-5 h-5" />
-            <span>{completedCount > 0 ? 'استكمال الرحلة' : 'ابدأ التعلم الآن'}</span>
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-
-          {/* Secondary Action: Instructions & Journey Rules */}
+        {/* Action Button: قواعد الرحلة والتعليمات أولاً */}
+        <div className="flex flex-col items-center justify-center gap-3 pt-4 border-t border-slate-800/80">
           <button
             type="button"
             id="btn-welcome-instructions"
             onClick={onOpenInstructions}
-            className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-[#11172e] hover:bg-[#182142] text-blue-200 hover:text-white font-bold text-sm sm:text-base border-2 border-slate-700 hover:border-blue-400/50 transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full sm:w-auto min-w-[300px] px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-base sm:text-lg shadow-[0_0_30px_rgba(37,99,235,0.45)] border-2 border-blue-400/50 hover:border-blue-300 transition-all cursor-pointer flex items-center justify-center gap-3 transform hover:-translate-y-0.5"
           >
-            <BookOpen className="w-4 h-4 text-blue-400" />
+            <BookOpen className="w-5 h-5 text-[#ffd700]" />
             <span>قواعد الرحلة والتعليمات</span>
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <p className="text-xs text-slate-300 text-center font-medium max-w-md">
+            يرجى قراءة قواعد الرحلة والتعليمات أولاً، حيث يتوفر زر «ابدأ التعلم الآن» بأسفل القواعد للانطلاق إلى رحلتك التعليمية
+          </p>
         </div>
       </div>
     </div>

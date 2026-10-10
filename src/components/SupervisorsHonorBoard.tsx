@@ -4,7 +4,6 @@ import {
   Sparkles,
   GraduationCap,
   ArrowLeft,
-  CheckCircle,
   X,
   BookOpen,
   Crown,
@@ -255,19 +254,14 @@ export const SupervisorsHonorBoard: React.FC<SupervisorsHonorBoardProps> = ({
 
         {/* 4. Bottom Action Section */}
         {showContinueButton && onContinue && (
-          <div className="pt-4 sm:pt-6 border-t border-[#ffd700]/30 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 relative z-10">
-            <div className="text-[11px] sm:text-xs text-slate-300 flex items-center gap-1.5 sm:gap-2">
-              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
-              <span>تم اعتماد هذا التوثيق الأكاديمي رسمياً لبيئة الألعاب التعليمية بجامعة طنطا</span>
-            </div>
-
+          <div className="pt-4 sm:pt-6 border-t border-[#ffd700]/30 flex items-center justify-center relative z-10">
             <button
               type="button"
               onClick={onContinue}
               id="btn-supervisors-continue"
-              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm md:text-base shadow-[0_0_25px_rgba(37,99,235,0.45)] border-2 border-blue-400/50 flex items-center justify-center gap-2 cursor-pointer transition-all transform hover:-translate-y-0.5"
+              className="w-full sm:w-auto min-w-[260px] px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm sm:text-base shadow-[0_0_25px_rgba(37,99,235,0.45)] border-2 border-blue-400/50 flex items-center justify-center gap-2 cursor-pointer transition-all transform hover:-translate-y-0.5"
             >
-              <span>استكمال الرحلة التعليمية والبدء</span>
+              <span>ابدأ</span>
               <ArrowLeft className="w-4 h-4" />
             </button>
           </div>

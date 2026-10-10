@@ -441,7 +441,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
       {activeMainSection === 'welcome' && (
         <WelcomeScreen
           username={username}
-          onStartLearning={() => setActiveMainSection('map')}
+          onStartLearning={() => setActiveMainSection('instructions')}
           onOpenInstructions={() => setActiveMainSection('instructions')}
         />
       )}
