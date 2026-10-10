@@ -56,9 +56,11 @@ import {
   Zap,
   Wifi,
   Video,
+  BookOpen,
 } from 'lucide-react';
 import { AdminVideoManager } from './AdminVideoManager';
 import { AdminSupervisorsHonorManager } from './AdminSupervisorsHonorManager';
+import { AdminInstructionsManager } from './AdminInstructionsManager';
 
 
 interface AdminPanelProps {
@@ -67,7 +69,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsStudent }) => {
-  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'videos' | 'supervisors' | 'security' | 'overview'>('game_analytics');
+  const [activeTab, setActiveTab] = useState<'game_analytics' | 'whatsapp' | 'users' | 'videos' | 'supervisors' | 'instructions_standards' | 'security' | 'overview'>('game_analytics');
   const [settings, setSettings] = useState<AdminSettings>(getAdminSettings());
   const [users, setUsers] = useState<PortalUser[]>(getPortalUsers());
   const [logs, setLogs] = useState<ActivityLog[]>(getActivityLogs());
@@ -314,7 +316,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           aria-label="تبويبات لوحة المشرف"
           className="px-4 sm:px-6 pt-3 pb-3 bg-[#0a0816] border-b border-[#d4af37]/30"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {/* 1. لوحة النتائج */}
             <button
               type="button"
@@ -340,7 +342,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               id="tab-whatsapp"
               className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
                 activeTab === 'whatsapp'
-                  ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-[1.02]'
+                  ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white border-emerald-400 shadow-[0_0_20px_rgba(160,215,129,0.4)] scale-[1.02]'
                   : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-emerald-500/40'
               }`}
             >
@@ -360,7 +362,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               }`}
             >
               <Users className={`w-4 h-4 shrink-0 ${activeTab === 'users' ? 'text-slate-950' : 'text-amber-300'}`} />
-              <span className="truncate">دليل الطلاب وحسابات الدخول</span>
+              <span className="truncate">دليل الطلاب</span>
             </button>
 
             {/* 4. إدارة ورفع الفيديوهات */}
@@ -375,7 +377,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               }`}
             >
               <Video className={`w-4 h-4 shrink-0 ${activeTab === 'videos' ? 'text-white' : 'text-blue-400'}`} />
-              <span className="truncate">إدارة ورفع الفيديوهات</span>
+              <span className="truncate">إدارة الفيديوهات</span>
             </button>
 
             {/* 5. إدارة لوحة الشرف */}
@@ -390,10 +392,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               }`}
             >
               <Crown className={`w-4 h-4 shrink-0 ${activeTab === 'supervisors' ? 'text-slate-950' : 'text-amber-400'}`} />
-              <span className="truncate">إدارة لوحة الشرف</span>
+              <span className="truncate">لوحة الشرف</span>
             </button>
 
-            {/* 6. باسوورد الأدمن والأمان */}
+            {/* 6. إدارة إرشادات ومعايير الموقع */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('instructions_standards')}
+              id="tab-instructions-standards"
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+                activeTab === 'instructions_standards'
+                  ? 'bg-gradient-to-r from-teal-500 via-emerald-600 to-teal-700 text-white border-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.45)] scale-[1.02]'
+                  : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-teal-400/40'
+              }`}
+            >
+              <BookOpen className={`w-4 h-4 shrink-0 ${activeTab === 'instructions_standards' ? 'text-white' : 'text-teal-400'}`} />
+              <span className="truncate">معايير وإرشادات الموقع</span>
+            </button>
+
+            {/* 7. باسوورد الأدمن والأمان */}
             <button
               type="button"
               onClick={() => setActiveTab('security')}
@@ -405,22 +422,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
               }`}
             >
               <KeyRound className={`w-4 h-4 shrink-0 ${activeTab === 'security' ? 'text-white' : 'text-purple-400'}`} />
-              <span className="truncate">باسوورد الأدمن والأمان</span>
+              <span className="truncate">الأمان والباسوورد</span>
             </button>
 
-            {/* 7. نظرة عامة وسجل العمليات */}
+            {/* 8. نظرة عامة وسجل العمليات */}
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
               id="tab-overview"
-              className={`col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
+              className={`flex items-center justify-center gap-2 px-3 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer border ${
                 activeTab === 'overview'
                   ? 'bg-gradient-to-r from-cyan-500 via-cyan-600 to-blue-700 text-white border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02]'
                   : 'bg-[#120f24] hover:bg-[#1a1633] text-slate-300 hover:text-white border-slate-800 hover:border-cyan-400/40'
               }`}
             >
               <Activity className={`w-4 h-4 shrink-0 ${activeTab === 'overview' ? 'text-white' : 'text-cyan-400'}`} />
-              <span className="truncate">نظرة عامة وسجل العمليات</span>
+              <span className="truncate">سجل العمليات</span>
             </button>
           </div>
         </nav>
@@ -637,6 +654,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                       <th className="p-3.5">الطالب والشخصية</th>
                       <th className="p-3.5">المجموعة التجريبية</th>
                       <th className="p-3.5">نمط التغذية</th>
+                      <th className="p-3.5 text-center">الاختبار القبلي</th>
                       <th className="p-3.5 text-center">المستوى الحالي</th>
                       <th className="p-3.5 text-center">المستويات المكتملة</th>
                       <th className="p-3.5 text-center">النقاط (XP)</th>
@@ -715,6 +733,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
                               ) : (
                                 <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/40 text-purple-300 text-[10px] font-bold">
                                   ⏳ مرجأة (أدمن فقط)
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Pre-Test Result */}
+                            <td className="p-3.5 text-center font-['Cairo']">
+                              {prog.preTestResult?.completed ? (
+                                <span className="px-2 py-0.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold font-mono text-[10px] inline-flex items-center gap-1 shadow-sm">
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span>{prog.preTestResult.score}/{prog.preTestResult.maxScore} XP</span>
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[10px]">
+                                  لم يؤدَ بعد
                                 </span>
                               )}
                             </td>
@@ -826,6 +858,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
 
                     {/* Modal Body: Levels Breakdown */}
                     <div className="overflow-y-auto py-4 space-y-4 pr-1">
+                      {/* Pre-Test Status Box */}
+                      <div className={`p-4 rounded-2xl border-2 text-right ${
+                        selectedStudentDetail.preTestResult?.completed
+                          ? 'bg-emerald-950/40 border-emerald-500/50'
+                          : 'bg-amber-950/30 border-amber-500/40'
+                      }`}>
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎮</span>
+                            <span className="font-black text-white text-sm font-['Tajawal']">
+                              المستوى التمهيدي: لعبة الاختبار القبلي
+                            </span>
+                          </div>
+                          {selectedStudentDetail.preTestResult?.completed ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-900 text-emerald-200 text-xs font-bold font-mono">
+                              مكتمل • {selectedStudentDetail.preTestResult.score} / {selectedStudentDetail.preTestResult.maxScore} XP
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 text-xs font-bold">
+                              لم يؤدَ بعد
+                            </span>
+                          )}
+                        </div>
+
+                        {selectedStudentDetail.preTestResult?.completed && (
+                          <div className="mt-2 text-xs text-slate-300 flex items-center justify-between">
+                            <span>تاريخ الأداء: <span className="font-mono text-slate-400">{selectedStudentDetail.preTestResult.completedAt}</span></span>
+                            <span>الوقت المستغرق: <span className="font-mono text-emerald-400">{selectedStudentDetail.preTestResult.timeSpentSeconds} ثانية</span></span>
+                          </div>
+                        )}
+                      </div>
+
                       {Object.keys(selectedStudentDetail.completedLevels).length === 0 ? (
                         <div className="p-8 text-center text-slate-400 font-['Cairo']">
                           لم يقم الطالب بإنهاء أي مستوى حتى الآن.
@@ -1455,6 +1519,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onExitAdmin, onLoginAsSt
           {/* TAB 2.6: SUPERVISORS HONOR BOARD MANAGEMENT (إدارة لوحة الشرف) */}
           {activeTab === 'supervisors' && (
             <AdminSupervisorsHonorManager />
+          )}
+
+          {/* TAB 2.7: SITE INSTRUCTIONS & STANDARDS (إدارة إرشادات ومعايير الموقع) */}
+          {activeTab === 'instructions_standards' && (
+            <AdminInstructionsManager />
           )}
 
           {/* TAB 3: ADMIN PASSWORD & SECURITY */}

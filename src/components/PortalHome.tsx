@@ -17,6 +17,7 @@ import { PointsCelebrationModal } from './PointsCelebrationModal';
 import { ProgressBoardView } from './ProgressBoardView';
 import { DesignChallengeView } from './DesignChallengeView';
 import { SupervisorsHonorBoard } from './SupervisorsHonorBoard';
+import { PreTestGameView } from './PreTestGameView';
 import { getSupervisorsBoardConfig } from '../utils/supervisorsStorage';
 import { getGroupByUsername } from '../data/studentAccounts';
 import { getStudentProgress, getAllStudentsProgress, saveAllStudentsProgress } from '../utils/gameStorage';
@@ -50,6 +51,7 @@ export type PortalSection =
   | 'map'
   | 'welcome'
   | 'instructions'
+  | 'pretest'
   | 'profile'
   | 'game'
   | 'task'
@@ -250,7 +252,26 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
               }`}
             >
               <Compass className="w-4 h-4" />
-              <span>🗺️ خريطة التعلم (10 مراحل)</span>
+              <span>🗺️ خريطة التعلم</span>
+            </button>
+
+            {/* المستوى التمهيدي: لعبة الاختبار القبلي */}
+            <button
+              type="button"
+              id="tab-pretest"
+              onClick={() => setActiveMainSection('pretest')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                activeMainSection === 'pretest'
+                  ? 'bg-gradient-to-r from-amber-500 via-[#ffd700] to-yellow-500 text-slate-950 shadow-[0_0_15px_rgba(255,215,0,0.45)]'
+                  : studentGame.preTestResult?.completed
+                  ? 'text-emerald-300 hover:text-white hover:bg-slate-900 border border-emerald-500/30'
+                  : 'text-amber-300 hover:text-white hover:bg-slate-900 border border-amber-500/50 animate-pulse'
+              }`}
+            >
+              <Gamepad2 className="w-4 h-4 text-amber-400" />
+              <span>
+                {studentGame.preTestResult?.completed ? '✅ الاختبار القبلي (مكتمل)' : '⭐ الاختبار القبلي (البداية)'}
+              </span>
             </button>
 
             {/* 2. النشاط والتقييم */}
@@ -434,6 +455,7 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
           username={username}
           onSelectStageForContent={() => setActiveMainSection('levels')}
           onSelectStageForActivity={() => setActiveMainSection('game')}
+          onSelectPreTest={() => setActiveMainSection('pretest')}
         />
       )}
 
@@ -449,8 +471,27 @@ export const PortalHome: React.FC<PortalHomeProps> = ({ username, onLogout }) =>
       {/* 3. شاشة التعليمات وقواعد الرحلة (Screen 4) */}
       {activeMainSection === 'instructions' && (
         <InstructionsScreen
-          onGotIt={() => setActiveMainSection('map')}
+          onGotIt={() => {
+            const prog = getStudentProgress(username);
+            if (!prog.preTestResult?.completed) {
+              setActiveMainSection('pretest');
+            } else {
+              setActiveMainSection('map');
+            }
+          }}
           onBackToWelcome={() => setActiveMainSection('welcome')}
+        />
+      )}
+
+      {/* المستوى التمهيدي: لعبة الاختبار القبلي (Screen Pre-Test) */}
+      {activeMainSection === 'pretest' && (
+        <PreTestGameView
+          username={username}
+          onFinishPreTest={() => {
+            refreshProgress();
+            setActiveMainSection('map');
+          }}
+          onBackToInstructions={() => setActiveMainSection('instructions')}
         />
       )}
 

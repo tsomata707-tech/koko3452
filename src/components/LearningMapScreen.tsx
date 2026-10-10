@@ -19,24 +19,28 @@ import {
   Volume2,
   AlertCircle,
 } from 'lucide-react';
-import { GAME_LEVELS_DATA, GameLevelDef } from '../data/gameLevelsData';
+import { GameLevelDef, GAME_LEVELS_DATA } from '../data/gameLevelsData';
 import { getStudentProgress } from '../utils/gameStorage';
 import { getVideoBySlot } from '../utils/videoStorage';
+import { Gamepad2 } from 'lucide-react';
 
 interface LearningMapScreenProps {
   username: string;
   onSelectStageForContent: (levelNum: number) => void;
   onSelectStageForActivity: (levelNum: number) => void;
+  onSelectPreTest?: () => void;
 }
 
 export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
   username,
   onSelectStageForContent,
   onSelectStageForActivity,
+  onSelectPreTest,
 }) => {
   const progress = getStudentProgress(username);
   const [selectedIntroLevel, setSelectedIntroLevel] = useState<GameLevelDef | null>(null);
   const [lockedStageAlert, setLockedStageAlert] = useState<GameLevelDef | null>(null);
+  const [preTestRequiredAlert, setPreTestRequiredAlert] = useState(false);
 
   // Skill icons for each of the 10 stages
   const stageIcons: Record<number, React.ReactNode> = {
@@ -53,6 +57,12 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
   };
 
   const handleStageClick = (lvl: GameLevelDef) => {
+    const isPreTestDone = !!progress.preTestResult?.completed;
+    if (!isPreTestDone) {
+      setPreTestRequiredAlert(true);
+      return;
+    }
+
     const isCompleted = !!progress.completedLevels[lvl.levelNumber];
     const isCurrent = lvl.levelNumber === progress.currentLevel;
     const isUpcoming = lvl.levelNumber > progress.currentLevel;
@@ -100,6 +110,77 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
               المرحلة {progress.currentLevel} <span className="text-xs text-slate-400">/ 10</span>
             </span>
           </div>
+        </div>
+
+        {/* PRE-TEST (المستوى التمهيدي: الاختبار القبلي) CARD */}
+        <div className="mt-6 mb-2">
+          {!progress.preTestResult?.completed ? (
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-yellow-950/40 to-slate-950 border-2 border-[#ffd700] shadow-[0_0_30px_rgba(255,215,0,0.3)] flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+              <div className="flex items-center gap-4 text-right">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ffd700] to-amber-500 text-slate-950 flex items-center justify-center font-black text-2xl shadow-lg shrink-0">
+                  <Gamepad2 className="w-8 h-8 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-500/60 text-[#ffd700] text-[10px] font-black">
+                      المستوى التمهيدي: الخطوة الأولى
+                    </span>
+                    <span className="text-xs text-amber-300 font-bold">مطلوب للبدء</span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white font-['Tajawal']">
+                    لعبة الاختبار القبلي (Adobe Captivate 2019)
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                    ادخل الاختبار القبلي أولاً ثم تابع باقي المستويات. صُمم على شكل لعبة أسئلة تفاعلية لتشخيص مهاراتك وفتح المرحلة 1.
+                  </p>
+                </div>
+              </div>
+
+              {onSelectPreTest && (
+                <button
+                  type="button"
+                  id="btn-map-start-pretest"
+                  onClick={onSelectPreTest}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-[#ffd700] to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(255,215,0,0.4)] border border-amber-300 cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap transform hover:-translate-y-0.5 transition"
+                >
+                  <Gamepad2 className="w-4 h-4 text-slate-950" />
+                  <span>ابدأ لعبة الاختبار القبلي الآن</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-950/70 to-slate-950 border border-emerald-500/60 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+              <div className="flex items-center gap-3.5 text-right">
+                <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-md shrink-0">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-100" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 text-[10px] font-bold">
+                      المستوى التمهيدي: مكتمل
+                    </span>
+                    <span className="text-xs text-emerald-400 font-mono font-bold">
+                      +{progress.preTestResult.score} / {progress.preTestResult.maxScore} XP
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-black text-white font-['Tajawal']">
+                    تم اجتياز لعبة الاختبار القبلي وحصد وسام المستكشف التمهيدي 🏅
+                  </h4>
+                </div>
+              </div>
+
+              {onSelectPreTest && (
+                <button
+                  type="button"
+                  onClick={onSelectPreTest}
+                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold border border-slate-700 cursor-pointer whitespace-nowrap"
+                >
+                  مراجعة نتيجة الاختبار القبلي
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Winding Path / Visual Road of the 10 Stages */}
@@ -329,7 +410,62 @@ export const LearningMapScreen: React.FC<LearningMapScreenProps> = ({
         </div>
       )}
 
-      {/* Sequential Lock Alert Modal */}
+      {/* Pre-Test Required Alert Modal */}
+      {preTestRequiredAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl bg-[#0e0c1c] border-2 border-[#ffd700] p-6 sm:p-8 text-right shadow-[0_0_50px_rgba(255,215,0,0.35)] space-y-4 font-['Cairo',_sans-serif]">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#ffd700] to-amber-500 text-slate-950 flex items-center justify-center mx-auto text-3xl shadow-lg">
+              <Gamepad2 className="w-9 h-9" />
+            </div>
+
+            <div className="text-center">
+              <span className="px-3 py-0.5 rounded-full bg-amber-950 border border-amber-500 text-[#ffd700] text-xs font-black">
+                توجيه إرشادي إلزامي
+              </span>
+              <h3 className="text-xl font-black text-white font-['Tajawal'] mt-2">
+                ادخل الاختبار القبلي أولاً!
+              </h3>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#070914] border border-slate-800 text-xs text-slate-300 leading-relaxed space-y-2">
+              <p>
+                ⚠️ <strong>معايير بيئة الألعاب التعليمية:</strong>
+              </p>
+              <p>
+                وفقاً لضوابط التصميم التعليمي المعتمدة، يجب على الطالب أداء <strong className="text-[#ffd700]">لعبة الاختبار القبلي (المستوى التمهيدي)</strong> أولاً لقياس المهارات القبلية بدقة قبل فتح المرحلة 1 وباقي مسار التعلم.
+              </p>
+              <p className="text-emerald-300 font-bold">
+                🎮 الاختبار القبلي مصمم في صورة لعبة أسئلة تفاعلية ممتعة تمنحك نقاط XP وشارة البداية.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setPreTestRequiredAlert(false)}
+                className="w-1/3 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 font-bold text-xs cursor-pointer"
+              >
+                إغلاق
+              </button>
+
+              {onSelectPreTest && (
+                <button
+                  type="button"
+                  id="btn-alert-go-to-pretest"
+                  onClick={() => {
+                    setPreTestRequiredAlert(false);
+                    onSelectPreTest();
+                  }}
+                  className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-[#ffd700] to-yellow-500 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Gamepad2 className="w-4 h-4" />
+                  <span>بدء لعبة الاختبار القبلي الآن</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {lockedStageAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-md rounded-3xl bg-[#0e0c1c] border-2 border-amber-500/80 p-6 sm:p-8 text-right shadow-[0_0_40px_rgba(245,158,11,0.3)] space-y-4">

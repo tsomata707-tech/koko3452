@@ -60,11 +60,31 @@ export interface CompletedLevelResult {
   feedbackRevealedToStudent: boolean; // true for G1 & G3, false for G2 & G4
 }
 
+export interface PreTestQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  points: number;
+}
+
+export interface PreTestResult {
+  completed: boolean;
+  score: number;
+  maxScore: number;
+  answers: Record<string, number>; // questionId -> chosenIndex
+  completedAt: string;
+  timeSpentSeconds: number;
+  passed: boolean;
+}
+
 export interface StudentGameProgress {
   username: string;
   avatarId: string;
   currentLevel: number; // 1 to 10
   completedLevels: Record<number, CompletedLevelResult>;
+  preTestResult?: PreTestResult;
   totalScore: number;
   hearts: number;
   badges: string[];

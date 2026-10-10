@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { Target, Star, Award, TrendingUp, CheckCircle, ArrowLeft, BookOpen, Sparkles, Shield, HelpCircle, Compass } from 'lucide-react';
+import {
+  Target,
+  Star,
+  Award,
+  TrendingUp,
+  CheckCircle,
+  ArrowLeft,
+  BookOpen,
+  Sparkles,
+  Shield,
+  HelpCircle,
+  Compass,
+  Gamepad2,
+} from 'lucide-react';
+import { getSiteInstructionsConfig, SiteInstructionsConfig } from '../utils/instructionsStorage';
 
 interface InstructionsScreenProps {
   onGotIt: () => void;
@@ -7,76 +21,27 @@ interface InstructionsScreenProps {
 }
 
 export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt, onBackToWelcome }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'goals' | 'points' | 'badges' | 'levels'>('all');
+  const [config] = useState<SiteInstructionsConfig>(() => getSiteInstructionsConfig());
+  const [activeTab, setActiveTab] = useState<string>('all');
 
-  const cards = [
-    {
-      id: 'goals',
-      title: 'الأهداف التعليمية والمهارية',
-      icon: <Target className="w-6 h-6 text-blue-400" />,
-      borderColor: 'border-blue-500/40',
-      bgColor: 'from-blue-950/40 to-slate-950/60',
-      tag: 'الهدف الرئيسي',
-      tagColor: 'bg-blue-950 text-blue-300 border-blue-500/50',
-      text: 'تنمية مهارات إنتاج الوسائط المتعددة التفاعلية باستخدام برنامج Adobe Captivate 2019 وتعزيز التقبل التكنولوجي للتعلم الإلكتروني القائم على الألعاب.',
-      bullets: [
-        'إتقان واجهة البرنامج وإدارة الشرائح والمشاهد التفاعلية.',
-        'إدراج وتنسيق الوسائط (النصوص، الصور، الأصوات، الفيديو).',
-        'برمجة الأزرار ونقاط التفاعل ومسارات التعلم المتقدمة.',
-        'إنشاء بنوك الأسئلة والاختبارات التفاعلية وتصدير المشاريع بدقة.',
-      ],
-    },
-    {
-      id: 'points',
-      title: 'نظام النقاط التراكمي',
-      icon: <Star className="w-6 h-6 text-[#ffd700]" />,
-      borderColor: 'border-[#ffd700]/50',
-      bgColor: 'from-amber-950/30 to-slate-950/60',
-      tag: '⭐ رصيد XP',
-      tagColor: 'bg-amber-950 text-[#ffd700] border-[#ffd700]/50',
-      text: 'تحصل على نقاط ذهبية (XP) عند حل الأنشطة والمهام التعليمية. الإجابة الصحيحة والسريعة تمنحك نقاطاً أكثر لتعزيز ترتيبك وإنجازك.',
-      bullets: [
-        'كل سؤال صحيح يمنحك نقاطاً تضاف مباشرة لسجلك.',
-        'الدقة والتركيز في المحاولة الأولى تمنحك مكافآت إضافية.',
-        'في النمط التعاوني: نقاطك تساهم مباشرة في رفع رصيد وإنجاز فريقك المشترك.',
-        'في النمط التنافسي: نقاطك تحدد ترتيبك الفردي على لوحة متصدري الدفعة.',
-      ],
-    },
-    {
-      id: 'badges',
-      title: 'نظام الشارات والأوسمة',
-      icon: <Award className="w-6 h-6 text-purple-400" />,
-      borderColor: 'border-purple-500/50',
-      bgColor: 'from-purple-950/30 to-slate-950/60',
-      tag: '🏅 أوسمة شرف',
-      tagColor: 'bg-purple-950 text-purple-300 border-purple-500/50',
-      text: 'إنجازات محددة تمنحك شارات مميزة تثبت جدارتك مثل "خبير التفاعل"، "مهندس الشرائح"، و"نجم الوسائط".',
-      bullets: [
-        'كل مرحلة من الـ 10 مراحل تمنحك وساماً نوعياً عند إتقان مهاراتها.',
-        'أوسمة خاصة للسرعة الفائقة والتفوق الخالي من الأخطاء.',
-        'تُعرض أوسمتك في ملفك الشخصي ولوحة الشرف أمام زملائك.',
-        'جمع الأوسمة يفتح لك صلاحيات ومزايا متقدمة في بيئة التعلم.',
-      ],
-    },
-    {
-      id: 'levels',
-      title: 'نظام المستويات والترقية',
-      icon: <TrendingUp className="w-6 h-6 text-emerald-400" />,
-      borderColor: 'border-emerald-500/50',
-      bgColor: 'from-emerald-950/30 to-slate-950/60',
-      tag: '📈 سلم الترقية',
-      tagColor: 'bg-emerald-950 text-emerald-300 border-emerald-500/50',
-      text: 'اجمع النقاط وأكمل المهام للانتقال التدريجي من مستوى "مبتدئ" إلى "ممارس" ثم "متقدم" وصولاً إلى مستوى "محترف وخبير Captivate".',
-      bullets: [
-        'المستوى 1-2: مبتدئ (استكشاف المفاهيم الأساسية وواجهة البرنامج).',
-        'المستوى 3-5: ممارس (التعامل الاحترافي مع الشرائح والوسائط).',
-        'المستوى 6-8: متقدم (بناء التفاعلية والمحاكاة والتقييمات).',
-        'المستوى 9-10: خبير ومصمم محترف (النشر والتكامل والجودة التعليمية).',
-      ],
-    },
-  ];
+  const getCardIcon = (iconKey: string) => {
+    switch (iconKey) {
+      case 'pretest':
+        return <Gamepad2 className="w-6 h-6 text-amber-400" />;
+      case 'goals':
+        return <Target className="w-6 h-6 text-blue-400" />;
+      case 'points':
+        return <Star className="w-6 h-6 text-[#ffd700]" />;
+      case 'badges':
+        return <Award className="w-6 h-6 text-purple-400" />;
+      case 'levels':
+        return <TrendingUp className="w-6 h-6 text-emerald-400" />;
+      default:
+        return <BookOpen className="w-6 h-6 text-cyan-400" />;
+    }
+  };
 
-  const filteredCards = activeTab === 'all' ? cards : cards.filter((c) => c.id === activeTab);
+  const filteredCards = activeTab === 'all' ? config.cards : config.cards.filter((c) => c.id === activeTab);
 
   return (
     <div className="relative w-full max-w-5xl mx-auto z-10 font-['Cairo',_sans-serif] text-right py-4 animate-fadeIn">
@@ -91,14 +56,14 @@ export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt,
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full bg-blue-950/80 border border-blue-500/50 text-blue-300 text-xs font-bold flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                دليل قواعد البيئة التعليمية
+                دليل قواعد ومعايير البيئة التعليمية
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white font-['Tajawal'] tracking-tight">
-              قواعد ونظام بيئة الألعاب التعليمية
+              {config.siteTitle}
             </h1>
             <p className="text-sm text-slate-300 mt-1">
-              أهلاً بك! هذه البيئة تعتمد على التعلم القائم على الألعاب (Gamification) لتنمية مهارات إنتاج وتصميم الوسائط المتعددة.
+              {config.siteDescription}
             </p>
           </div>
 
@@ -113,47 +78,42 @@ export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt,
             >
               الكل
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('goals')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'goals' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              الأهداف
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('points')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'points' ? 'bg-[#ffd700] text-slate-950' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              النقاط
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('badges')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'badges' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              الشارات
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('levels')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'levels' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              المستويات
-            </button>
+            {config.cards.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveTab(c.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === c.id
+                    ? c.id === 'pretest'
+                      ? 'bg-[#ffd700] text-slate-950 font-black'
+                      : 'bg-blue-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {c.title.split(' ')[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* GUIDANCE NOTICE BANNER (Prominent requirement) */}
+        <div className="my-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-yellow-950/50 to-slate-950 border-2 border-[#ffd700] shadow-[0_0_30px_rgba(255,215,0,0.25)] flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ffd700] to-amber-500 flex items-center justify-center text-slate-950 shrink-0 shadow-lg">
+            <Sparkles className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="flex-1">
+            <span className="text-xs font-black text-[#ffd700] block mb-1">
+              توجيه إرشادي هام للبدء:
+            </span>
+            <p className="text-sm sm:text-base font-black text-white font-['Tajawal'] leading-relaxed">
+              {config.guidanceNotice}
+            </p>
           </div>
         </div>
 
         {/* The Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-6">
           {filteredCards.map((card) => (
             <div
               key={card.id}
@@ -163,7 +123,7 @@ export const InstructionsScreen: React.FC<InstructionsScreenProps> = ({ onGotIt,
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 shadow">
-                      {card.icon}
+                      {getCardIcon(card.iconKey)}
                     </div>
                     <h3 className="text-lg font-black text-white font-['Tajawal']">{card.title}</h3>
                   </div>

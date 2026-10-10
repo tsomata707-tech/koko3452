@@ -1,0 +1,507 @@
+import React, { useState, useEffect } from 'react';
+import {
+  BookOpen,
+  Target,
+  Star,
+  Award,
+  TrendingUp,
+  Gamepad2,
+  Save,
+  RotateCcw,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  Sliders,
+  Check,
+  Edit3,
+  HelpCircle,
+  Sparkles,
+} from 'lucide-react';
+import {
+  getSiteInstructionsConfig,
+  saveSiteInstructionsConfig,
+  resetSiteInstructionsToDefault,
+  SiteInstructionsConfig,
+  InstructionCardItem,
+} from '../utils/instructionsStorage';
+import {
+  getPreTestQuestions,
+  savePreTestQuestions,
+  resetPreTestQuestionsToDefault,
+} from '../data/preTestData';
+import { PreTestQuestion } from '../types';
+
+export const AdminInstructionsManager: React.FC = () => {
+  const [config, setConfig] = useState<SiteInstructionsConfig>(() => getSiteInstructionsConfig());
+  const [preTestQuestions, setPreTestQuestions] = useState<PreTestQuestion[]>(() => getPreTestQuestions());
+  const [activeSubTab, setActiveSubTab] = useState<'instructions_cards' | 'pretest_questions'>('instructions_cards');
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [activeEditingCardId, setActiveEditingCardId] = useState<string>('pretest');
+
+  // New Bullet temp state
+  const [newBulletText, setNewBulletText] = useState('');
+
+  // Handle saving
+  const handleSaveConfig = () => {
+    saveSiteInstructionsConfig(config);
+    savePreTestQuestions(preTestQuestions);
+    setSaveSuccessMsg('تم حفظ إرشادات ومعايير الموقع بنجاح! تم تحديث ما يراه الطلاب فورياً.');
+    setTimeout(() => setSaveSuccessMsg(null), 4000);
+  };
+
+  const handleResetDefaults = () => {
+    if (window.confirm('هل أنت متأكد من استعادة النصوص والمعايير الافتراضية المعتمدة؟')) {
+      const def = resetSiteInstructionsToDefault();
+      const defQ = resetPreTestQuestionsToDefault();
+      setConfig(def);
+      setPreTestQuestions(defQ);
+      setSaveSuccessMsg('تمت استعادة المعايير الافتراضية بنجاح.');
+      setTimeout(() => setSaveSuccessMsg(null), 3000);
+    }
+  };
+
+  const activeCard = config.cards.find((c) => c.id === activeEditingCardId) || config.cards[0];
+
+  const updateActiveCardField = <K extends keyof InstructionCardItem>(field: K, value: InstructionCardItem[K]) => {
+    setConfig((prev) => ({
+      ...prev,
+      cards: prev.cards.map((c) => (c.id === activeCard.id ? { ...c, [field]: value } : c)),
+    }));
+  };
+
+  const handleAddBulletToActiveCard = () => {
+    if (!newBulletText.trim()) return;
+    updateActiveCardField('bullets', [...activeCard.bullets, newBulletText.trim()]);
+    setNewBulletText('');
+  };
+
+  const handleRemoveBullet = (index: number) => {
+    const updated = activeCard.bullets.filter((_, idx) => idx !== index);
+    updateActiveCardField('bullets', updated);
+  };
+
+  const handleEditBullet = (index: number, val: string) => {
+    const updated = [...activeCard.bullets];
+    updated[index] = val;
+    updateActiveCardField('bullets', updated);
+  };
+
+  // Pre-test questions handlers
+  const handleUpdateQuestion = (qId: string, field: keyof PreTestQuestion, val: any) => {
+    setPreTestQuestions((prev) =>
+      prev.map((q) => (q.id === qId ? { ...q, [field]: val } : q))
+    );
+  };
+
+  const handleUpdateQuestionOption = (qId: string, optIdx: number, val: string) => {
+    setPreTestQuestions((prev) =>
+      prev.map((q) => {
+        if (q.id !== qId) return q;
+        const opts = [...q.options];
+        opts[optIdx] = val;
+        return { ...q, options: opts };
+      })
+    );
+  };
+
+  return (
+    <div className="space-y-6 text-right font-['Cairo',_sans-serif]">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#120e26] via-[#1a1435] to-[#120e26] border-2 border-[#d4af37]">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-3 py-0.5 rounded-full bg-[#ffd700] text-slate-950 font-black text-xs">
+              صلاحية التعديل الأكاديمي
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-950 border border-blue-500/40 text-blue-300 text-xs font-bold">
+              إرشادات وقواعد ومعايير المنصة
+            </span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-black text-white font-['Tajawal']">
+            إدارة إرشادات ومعايير الموقع (الاختبار القبلي، الأهداف، النقاط، الشارات، المستويات)
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed max-w-2xl">
+            يمكنك تخصيص وصياغة عبارة التوجيه الإرشادي وكافة بنود الأهداف ونظام النقاط والشارات والمستويات لتتطابق تماماً مع معايير بحثك ورسالتك الأكاديمية.
+          </p>
+        </div>
+
+        {/* Global Action Buttons */}
+        <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            className="flex-1 md:flex-initial px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>استعادة الافتراضي</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-save-site-instructions"
+            onClick={handleSaveConfig}
+            className="flex-1 md:flex-initial px-6 py-3 rounded-xl bg-gradient-to-r from-[#ffd700] to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 text-xs font-black transition shadow-[0_0_20px_rgba(255,215,0,0.4)] flex items-center justify-center gap-2 cursor-pointer border border-amber-300 transform hover:-translate-y-0.5"
+          >
+            <Save className="w-4 h-4" />
+            <span>حفظ التعديلات في المنصة</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Success Notification Alert */}
+      {saveSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-950/80 border-2 border-emerald-400 text-emerald-200 text-sm font-bold flex items-center gap-3 animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span>{saveSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* Sub Tabs Switcher */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#090b17] border border-slate-800 w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('instructions_cards')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 ${
+            activeSubTab === 'instructions_cards'
+              ? 'bg-[#ffd700] text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>بطاقات الإرشادات والمعايير (الأهداف، النقاط، الشارات، القبلي)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('pretest_questions')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 ${
+            activeSubTab === 'pretest_questions'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Gamepad2 className="w-4 h-4" />
+          <span>بنك أسئلة لعبة الاختبار القبلي ({preTestQuestions.length} أسئلة)</span>
+        </button>
+      </div>
+
+      {/* TAB 1: INSTRUCTIONS CARDS & GUIDANCE EDITOR */}
+      {activeSubTab === 'instructions_cards' && (
+        <div className="space-y-6">
+          {/* Main Guidance Banner Editor (The exact user prompt requirement) */}
+          <div className="p-6 rounded-2xl bg-[#0e1224] border-2 border-amber-500/40 shadow-lg space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#ffd700]" />
+                <h4 className="text-base font-black text-white font-['Tajawal']">
+                  نص التوجيه الإرشادي الرئيسي للبدء والاختبار القبلي
+                </h4>
+              </div>
+              <span className="text-xs text-amber-300 font-bold">
+                يظهر أعلى بطاقات الإرشادات لتوجيه الطالب
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                عبارة التوجيه الإرشادي (مثال: ادخل الاختبار القبلي أولاً ثم تابع باقي المستويات):
+              </label>
+              <textarea
+                value={config.guidanceNotice}
+                onChange={(e) => setConfig({ ...config, guidanceNotice: e.target.value })}
+                rows={2}
+                className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none leading-relaxed"
+                placeholder="اكتب التوجيه الإرشادي هنا..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  عنوان شاشة الإرشادات:
+                </label>
+                <input
+                  type="text"
+                  value={config.siteTitle}
+                  onChange={(e) => setConfig({ ...config, siteTitle: e.target.value })}
+                  className="w-full h-11 px-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  وصف شاشة الإرشادات المختصر:
+                </label>
+                <input
+                  type="text"
+                  value={config.siteDescription}
+                  onChange={(e) => setConfig({ ...config, siteDescription: e.target.value })}
+                  className="w-full h-11 px-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Pretest Requirement Checkbox */}
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="chk-pretest-required"
+                  checked={config.pretestRequiredBeforeLevels}
+                  onChange={(e) => setConfig({ ...config, pretestRequiredBeforeLevels: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-400 cursor-pointer"
+                />
+                <label htmlFor="chk-pretest-required" className="text-xs sm:text-sm font-bold text-slate-200 cursor-pointer">
+                  إلزامية أداء لعبة الاختبار القبلي قبل فتح مستويات خريطة التعلم (معيار المنهج البحثي)
+                </label>
+              </div>
+
+              <span className="text-[11px] text-emerald-400 font-mono">
+                {config.pretestRequiredBeforeLevels ? '✓ مفعّل إجبارياً' : 'اختياري'}
+              </span>
+            </div>
+          </div>
+
+          {/* Cards Selector Tabs */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-black text-white font-['Tajawal']">
+              اختر البطاقة لتعديل نصوصها ومعاييرها ونقاطها:
+            </h4>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {config.cards.map((c) => {
+                const isSelected = c.id === activeCard.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setActiveEditingCardId(c.id)}
+                    className={`p-3 rounded-2xl border transition-all text-center cursor-pointer flex flex-col items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-amber-950/80 to-[#120e26] border-[#ffd700] text-white shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-[1.02]'
+                        : 'bg-[#0d1021] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="text-xs font-black truncate">{c.title}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-amber-300 truncate">
+                      {c.tag}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card Detailed Content Editor */}
+          <div className="p-6 rounded-2xl bg-[#0b0e1e] border-2 border-blue-500/30 shadow-xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-blue-400" />
+                <h4 className="text-base font-black text-white font-['Tajawal']">
+                  تعديل بطاقة: <span className="text-[#ffd700]">{activeCard.title}</span>
+                </h4>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border bg-blue-950 text-blue-300 border-blue-500/50">
+                معرف البطاقة: {activeCard.id}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">عنوان البطاقة:</label>
+                <input
+                  type="text"
+                  value={activeCard.title}
+                  onChange={(e) => updateActiveCardField('title', e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">الشارة / الوسم الصغير (Tag):</label>
+                <input
+                  type="text"
+                  value={activeCard.tag}
+                  onChange={(e) => updateActiveCardField('tag', e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">النص التوضيحي للبطاقة:</label>
+              <textarea
+                value={activeCard.text}
+                onChange={(e) => updateActiveCardField('text', e.target.value)}
+                rows={3}
+                className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-[#ffd700] text-sm text-white focus:outline-none leading-relaxed"
+              />
+            </div>
+
+            {/* Bullets List Editor */}
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>عناصر وبنود المعايير (النقاط الفرعية):</span>
+                </label>
+                <span className="text-[11px] text-slate-400">({activeCard.bullets.length} بنود)</span>
+              </div>
+
+              <div className="space-y-2">
+                {activeCard.bullets.map((bullet, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-slate-900 text-slate-400 text-xs font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={bullet}
+                      onChange={(e) => handleEditBullet(idx, e.target.value)}
+                      className="flex-1 h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:border-[#ffd700] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBullet(idx)}
+                      className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 transition cursor-pointer"
+                      title="حذف هذا البند"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add New Bullet */}
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="text"
+                  value={newBulletText}
+                  onChange={(e) => setNewBulletText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddBulletToActiveCard();
+                    }
+                  }}
+                  placeholder="أدخل بنداً أو معياراً جديداً..."
+                  className="flex-1 h-10 px-3.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-400 text-xs text-white placeholder-slate-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddBulletToActiveCard}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>إضافة بند</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: PRE-TEST QUESTIONS BANK */}
+      {activeSubTab === 'pretest_questions' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0e1224] border border-blue-500/40">
+            <div>
+              <h4 className="text-sm font-black text-white font-['Tajawal']">
+                أسئلة لعبة الاختبار القبلي التفاعلية
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                يمكنك مراجعة وتعديل الأسئلة والخيارات والإجابة الصحيحة والتفسير لكل سؤال.
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-blue-950 text-blue-300 text-xs font-bold border border-blue-500/50">
+              {preTestQuestions.length} أسئلة معتمدة
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {preTestQuestions.map((q, qIndex) => (
+              <div
+                key={q.id}
+                className="p-5 rounded-2xl bg-[#0b0e1e] border-2 border-slate-800 hover:border-blue-500/50 transition-all space-y-4"
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <span className="px-2.5 py-1 rounded-xl bg-amber-950 text-[#ffd700] text-xs font-black border border-amber-500/40">
+                    السؤال #{qIndex + 1} ({q.points} XP)
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">ID: {q.id}</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">نص السؤال:</label>
+                  <input
+                    type="text"
+                    value={q.question}
+                    onChange={(e) => handleUpdateQuestion(q.id, 'question', e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-[#ffd700] focus:outline-none"
+                  />
+                </div>
+
+                {/* Options */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-300">
+                    الخيارات الأربعة (حدد الإجابة الصحيحة بالنقر على الدائرة):
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {q.options.map((opt, optIdx) => {
+                      const isCorrect = q.correctIndex === optIdx;
+                      return (
+                        <div
+                          key={optIdx}
+                          className={`flex items-center gap-2 p-2 rounded-xl border transition ${
+                            isCorrect
+                              ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200'
+                              : 'bg-slate-950 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuestion(q.id, 'correctIndex', optIdx)}
+                            className={`w-6 h-6 rounded-lg text-xs font-black flex items-center justify-center shrink-0 cursor-pointer border ${
+                              isCorrect
+                                ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow'
+                                : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'
+                            }`}
+                            title={isCorrect ? 'الإجابة الصحيحة' : 'تعيين كإجابة صحيحة'}
+                          >
+                            {isCorrect ? <Check className="w-3.5 h-3.5" /> : ['أ', 'ب', 'ج', 'د'][optIdx]}
+                          </button>
+
+                          <input
+                            type="text"
+                            value={opt}
+                            onChange={(e) => handleUpdateQuestionOption(q.id, optIdx, e.target.value)}
+                            className="flex-1 bg-transparent text-xs focus:outline-none"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Explanation */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    التفسير الأكاديمي والتغذية الراجعة للسؤال:
+                  </label>
+                  <input
+                    type="text"
+                    value={q.explanation}
+                    onChange={(e) => handleUpdateQuestion(q.id, 'explanation', e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 focus:border-[#ffd700] focus:outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
